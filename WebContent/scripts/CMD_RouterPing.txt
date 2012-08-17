@@ -1,0 +1,4 @@
+show context all
+context
+show arp
+ping
