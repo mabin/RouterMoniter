@@ -3,7 +3,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>后台管理系统</title>
 <META http-equiv=Content-Type content="text/html; charset=UTF-8">
-<link href="Gaobei_style.css" rel="stylesheet" type="text/css">
+<link href="pages/css/Gaobei_style.css" rel="stylesheet" type="text/css">
 <STYLE type=text/css>.style2 {
 	FONT-WEIGHT: bold; COLOR: #ffffff
     }
@@ -91,7 +91,7 @@
                   width=1> </TD></TR></TBODY></TABLE></TD>
           <TD id=td0 width="43%">
             <form name="login" method="post" action="servlet" target="_top">
-				<IMG height=15 alt=网站系统 src="footc.jpg"  width=1> 
+				<IMG height=15 alt=网站系统 src="pages/images/footc.jpg"  width=1> 
             <TABLE height="100%" cellSpacing=0 cellPadding=0 width="100%" border=0>
               <TBODY>
               <TR>
