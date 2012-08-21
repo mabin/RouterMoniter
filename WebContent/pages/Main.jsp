@@ -1,7 +1,7 @@
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>ExtTop - Desktop Sample App</title>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<title>Router Moniter</title>
 
     <link rel="stylesheet" type="text/css" href="../ExtJS/resources/css/ext-all.css" />
     <link rel="stylesheet" type="text/css" href="css/desktop.css" />
@@ -13,7 +13,11 @@
  	<!-- ENDLIBS -->
 
     <script type="text/javascript" src="../ExtJS/ext-all-debug.js"></script>
-
+	<!-- Datetime tools -->
+	<script type="text/javascript" src="js/datefield/DateTimeField.js"></script>
+	<script type="text/javascript" src="js/datefield/Spinner.js"></script>
+	<script type="text/javascript" src="js/datefield/SpinnerField.js"></script>
+	<link rel="stylesheet" type="text/css" href="js/datefield/Spinner.css"/>
     <!-- DESKTOP -->
     <script type="text/javascript" src="js/StartMenu.js"></script>
     <script type="text/javascript" src="js/TaskBar.js"></script>
@@ -25,20 +29,23 @@
 <body scroll="no">
 
 <div id="x-desktop">
-    <a href="http://extjs.com" target="_blank" style="margin:5px; float:right;"><img src="images/powered.gif" /></a>
 
     <dl id="x-shortcuts">
         <dt id="router-grid-win-shortcut">
-            <a href="#"><img src="images/grid32x32.gif" />
-            <div>Router Grid Window</div></a>
+            <a href="#"><img src="images/router.png" />
+            <div>路由管理</div></a>
         </dt>
-        <dt id="grid-win-shortcut">
-            <a href="#"><img src="images/s.gif" />
-            <div>Grid Window</div></a>
+        <dt id="router-grid-win-shortcut">
+            <a href="#"><img src="images/mail.png" />
+            <div>邮件管理</div></a>
         </dt>
-        <dt id="acc-win-shortcut">
+        <dt id="router-grid-win-shortcut">
+            <a href="#"><img src="images/phone.png" />
+            <div>短信管理</div></a>
+        </dt>
+        <dt id="router-grid-win-shortcut">
             <a href="#"><img src="images/s.gif" />
-            <div>Accordion Window</div></a>
+            <div>人员管理</div></a>
         </dt>
     </dl>
 </div>

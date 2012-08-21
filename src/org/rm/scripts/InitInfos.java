@@ -1,8 +1,10 @@
 package org.rm.scripts;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 import java.util.TimerTask;
 
 import javax.servlet.ServletContext;
@@ -10,6 +12,7 @@ import javax.servlet.ServletContext;
 import org.rm.bean.MetaDevice;
 import org.rm.biz.PingBiz;
 import org.rm.biz.RouterBiz;
+import org.rm.core.fun;
 import org.rm.core.log;
 import org.rm.utils.VituralConsole;
 
@@ -50,15 +53,22 @@ public class InitInfos extends TimerTask{
 				continue;//返回循环，开始登陆下一台设备
 			}
 			device1.setStatus(1);
-			device1.setLastOnline(new Timestamp(Calendar.getInstance().getTimeInMillis()));
+			device1.setLastOnline(fun.GetCurFormatTime());
 			biz = new PingBiz();
 			////调用biz，修改device状态
 			if (biz.updateRouterInfo(device1) != -1){
 				log.debug(this.getClass(),"update router success");
-				//调用biz，修改Context状态
-				//int contextID = biz.updateContextInfo(resultList,routerID);
-				//调用biz，修改Host状态
-				//biz.updateHostInfo(resultList,contextID);
+				
+				//通过脚本获取到contextList,格式List<Map<String,String>>
+				//通过脚本获取到HIMapList,格式List<Map<String,Object>>,将文档"路由巡检list定义0818.docx"中2的resultList名字改为hiMapList
+				//H表示Host，I表示Interface，map代表这是context 与 （host，interface)的映射list，原来的名字容易引起歧义
+				//将脚本获取到的两个List及router id同时传入biz层中的update方法
+				List<Map<String,String>> contextList = new ArrayList<Map<String,String>>();
+				List<Map<String,Object>> hiMapList = new ArrayList<Map<String,Object>>();
+				biz.updateContextInfo(contextList, hiMapList, device1.getId());
+				
+				
+				
 			}else{
 				log.error(this.getClass(),"update router info failure");
 			}

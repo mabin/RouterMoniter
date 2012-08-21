@@ -21,7 +21,7 @@ public class MetaDevice extends basebean implements java.io.Serializable {
 	private String loginName;
 	private String password;
 	private Integer status;
-	private Timestamp lastOnline;
+	private String lastOnline;
 	private String devicePath;
 	private String deviceParent;
 	private String deviceInfo;
@@ -39,7 +39,7 @@ public class MetaDevice extends basebean implements java.io.Serializable {
 	/** full constructor */
 	public MetaDevice(String deviceName, Integer deviceType, String hostname,
 			String deviceIp, String loginWay, String loginName,
-			String password, Integer status, Timestamp lastOnline,
+			String password, Integer status, String lastOnline,
 			String devicePath, String deviceParent, String deviceInfo,
 			String devicePurpose, String location, String deviceDep,
 			String onlineHosts) {
@@ -135,11 +135,11 @@ public class MetaDevice extends basebean implements java.io.Serializable {
 		this.status = status;
 	}
 
-	public Timestamp getLastOnline() {
+	public String getLastOnline() {
 		return this.lastOnline;
 	}
 
-	public void setLastOnline(Timestamp lastOnline) {
+	public void setLastOnline(String lastOnline) {
 		this.lastOnline = lastOnline;
 	}
 

@@ -182,6 +182,7 @@ public class VituralConsole {
 						}));
 				lstPattern.add(new TimeoutMatch(defaultTimeOut, new Closure() {
 					public void run(ExpectState state) {
+						session = null ;
 					}
 				}));
 			}

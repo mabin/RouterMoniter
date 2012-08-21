@@ -6,6 +6,13 @@
  */
 
 // Sample desktop configuration
+
+//公用变量
+var servletPath="../servlet";
+var GridPageSize=20;
+var itemsheight=25; //表单行高
+msg = {"1":"服务器返回：数据提交成功！"};
+
 MyDesktop = new Ext.app.App({
 	init :function(){
 		Ext.QuickTips.init();
@@ -13,12 +20,7 @@ MyDesktop = new Ext.app.App({
 
 	getModules : function(){
 		return [
-			new MyDesktop.RouterGridWindow(),
-			new MyDesktop.GridWindow(),
-            new MyDesktop.TabWindow(),
-            new MyDesktop.AccordionWindow(),
-            new MyDesktop.BogusMenuModule(),
-            new MyDesktop.BogusModule()
+			new MyDesktop.RouterGridWindow()
 		];
 	},
 
@@ -40,7 +42,7 @@ MyDesktop = new Ext.app.App({
     }
 });
 
-
+var routerid = '';
 /*
  * 路由器信息显示window
  */
@@ -48,7 +50,7 @@ MyDesktop.RouterGridWindow = Ext.extend(Ext.app.Module, {
     id:'router-grid-win',
     init : function(){
         this.launcher = {
-            text: '路由器管理',
+            text: 'Grid Window',
             iconCls:'icon-grid',
             handler : this.createWindow,
             scope: this
@@ -61,438 +63,347 @@ MyDesktop.RouterGridWindow = Ext.extend(Ext.app.Module, {
         if(!win){
             win = desktop.createWindow({
                 id: 'router-grid-win',
-                title:'Router Grid Window',
-                width:740,
-                height:480,
-                iconCls: 'icon-grid',
-                shim:false,
-                animCollapse:false,
-                constrainHeader:true,
-
-                layout: 'fit',
-                items:
-                    new Ext.grid.GridPanel({
-                        border:false,
-                        ds: new Ext.data.Store({
-                            reader: new Ext.data.ArrayReader({}, [
-                               {name: 'company'},
-                               {name: 'price', type: 'float'},
-                               {name: 'change', type: 'float'},
-                               {name: 'pctChange', type: 'float'}
-                            ]),
-                            data: Ext.grid.dummyData
-                        }),
-                        cm: new Ext.grid.ColumnModel([
-                            new Ext.grid.RowNumberer(),
-                            {header: "Company", width: 120, sortable: true, dataIndex: 'company'},
-                            {header: "Price", width: 70, sortable: true, renderer: Ext.util.Format.usMoney, dataIndex: 'price'},
-                            {header: "Change", width: 70, sortable: true, dataIndex: 'change'},
-                            {header: "% Change", width: 70, sortable: true, dataIndex: 'pctChange'}
-                        ]),
-
-                        viewConfig: {
-                            forceFit:true
-                        },
-                        //autoExpandColumn:'company',
-
-                        tbar:[{
-                            text:'Add Something',
-                            tooltip:'Add a new row',
-                            iconCls:'add'
-                        }, '-', {
-                            text:'Options',
-                            tooltip:'Blah blah blah blaht',
-                            iconCls:'option'
-                        },'-',{
-                            text:'Remove Something',
-                            tooltip:'Remove the selected item',
-                            iconCls:'remove'
-                        }]
-                    })
-            });
-        }
-        win.show();
-    }
-});
-
-
-/*
- * Example windows
- */
-MyDesktop.GridWindow = Ext.extend(Ext.app.Module, {
-    id:'grid-win',
-    init : function(){
-        this.launcher = {
-            text: 'Grid Window',
-            iconCls:'icon-grid',
-            handler : this.createWindow,
-            scope: this
-        }
-    },
-
-    createWindow : function(){
-        var desktop = this.app.getDesktop();
-        var win = desktop.getWindow('grid-win');
-        if(!win){
-            win = desktop.createWindow({
-                id: 'grid-win',
                 title:'Grid Window',
-                width:740,
+                width:950,
                 height:480,
                 iconCls: 'icon-grid',
                 shim:false,
                 animCollapse:false,
                 constrainHeader:true,
-
+				loadMask:{msg:'正在加载数据,请稍候.....'},
+				closeable:true,
                 layout: 'fit',
-                items:
-                    new Ext.grid.GridPanel({
-                        border:false,
-                        ds: new Ext.data.Store({
-                            reader: new Ext.data.ArrayReader({}, [
-                               {name: 'company'},
-                               {name: 'price', type: 'float'},
-                               {name: 'change', type: 'float'},
-                               {name: 'pctChange', type: 'float'}
-                            ]),
-                            data: Ext.grid.dummyData
-                        }),
-                        cm: new Ext.grid.ColumnModel([
-                            new Ext.grid.RowNumberer(),
-                            {header: "Company", width: 120, sortable: true, dataIndex: 'company'},
-                            {header: "Price", width: 70, sortable: true, renderer: Ext.util.Format.usMoney, dataIndex: 'price'},
-                            {header: "Change", width: 70, sortable: true, dataIndex: 'change'},
-                            {header: "% Change", width: 70, sortable: true, dataIndex: 'pctChange'}
-                        ]),
-
-                        viewConfig: {
-                            forceFit:true
-                        },
-                        //autoExpandColumn:'company',
-
-                        tbar:[{
-                            text:'Add Something',
-                            tooltip:'Add a new row',
-                            iconCls:'add'
-                        }, '-', {
-                            text:'Options',
-                            tooltip:'Blah blah blah blaht',
-                            iconCls:'option'
-                        },'-',{
-                            text:'Remove Something',
-                            tooltip:'Remove the selected item',
-                            iconCls:'remove'
-                        }]
-                    })
+                items:	new Ext.grid.GridPanel({
+							//header:true, region:'center', split:true, loadMask:true,
+							//border : true,stripeRows : false, enableHdMenu:false,
+							store : RouterStore,
+							columns: [
+								{header:'序号',dataIndex:'id',width:30,hidden:false},
+								{header:'设备类型',dataIndex:'devicetype',sortable:true,width:77},
+								{header:'主机名',dataIndex:'hostname',sortable:true,width:77},
+								{header:'IP地址',dataIndex:'deviceip',sortable:true,width:77},
+								{header:'登陆名',dataIndex:'loginname',sortable:true,width:77},
+								{header:'密码',dataIndex:'password',sortable:true,width:77},
+								{header:'状态',dataIndex:'status',sortable:true,width:37},
+								{header:'最后在线时间',dataIndex:'lastonline',sortable:true,width:157},
+								{header:'维护人',dataIndex:'devicepurpose',sortable:true,width:77},
+								{header:'设备位置',dataIndex:'location',sortable:true,width:77},
+								{header:'设备归属',dataIndex:'devicedep',sortable:true,width:77},
+								{header:'操作',width:80, xtype:'actioncolumn',
+									items:[{icon   : 'images/grid.png', tooltip: '查看信息',  
+			                                    handler: function(grid, rowIndex, colIndex) {
+			                                     var OBJ = RouterStore.getAt(rowIndex);
+			                            	       	routerid = OBJ.get('id');
+			                            	       	InfoShowform(OBJ);
+			                            	     }},'','','','','','','','','','','','','','','',
+										{icon   : 'images/edit.png', tooltip: '修改',  
+			                                    handler: function(grid, rowIndex, colIndex) {
+			                                     var OBJ = RouterStore.getAt(rowIndex);
+			                            	       	RouterEditform(OBJ,RouterStore);
+			                            	       
+			                            	     }},'','','','','','','','','','','','','','','',
+			                            	{icon:'images/delete.png', tooltip: '删除',  
+			                                    handler: function(grid, rowIndex, colIndex) {
+			                                     var OBJ = RouterStore.getAt(rowIndex);
+			                            	       if (confirm()==true){
+			                            	       	var OfferGrid_MyMask = new Ext.LoadMask(Ext.getBody(), { msg : "请等待..."});
+			                            	       		Ext.Ajax.request({url:servletPath , mthod:'POST',
+			                            	       			params:{
+			                            	       				actionname:'org.rm.action.RouterAction',
+								                                actioncmd:'deletebyid',
+								               		            fguid : OBJ.get('fguid')
+			                            	       			},
+			                            	       			callback:function(options,success,response){
+			                            	       				OfferGrid_MyMask.hide();
+			                            	       				if (success){
+			                            	       					var JSONOBJ = Ext.util.JSON.decode(response.responseText);
+			                            	       					if (JSONOBJ.success==true){
+			                            	       						//OfferStore.remove(OBJ);
+			                            	       					}else{
+			                            	       						//alert(Error.msg[JSONOBJ.msg]);
+			                            	       					}
+			                            	       				}else{
+			                            	       					// alert(Error.msg['10000']);
+			                            	       				}
+			                            	       			}
+			                            	       			});
+			                            	       }
+			                            	     }}
+			                            	]
+								}
+							],
+							tbar : [{text : '添加路由器',tooltip : '添加路由器',iconCls : 'add',handler : function() {
+								     RouterAddform(RouterStore);
+									 }} ]//,
+							//bbar: Offerbbar
+						})
             });
         }
         win.show();
+        RouterStore.load();
     }
 });
 
+//路由信息Store
+var RouterStore = new Ext.data.JsonStore({
+ 				url:"../servlet",baseParams:{actionname:'org.rm.action.RouterAction',actioncmd:'query'},
+ 				listeners:{
+ 					clear: function(){
+ 						if ( bbar = RouterGrid.getBottomToolbar()){
+ 							bbar.updateInfo();
+							bbar.next.setDisabled(true);
+							bbar.prev.setDisabled(true);
+							bbar.first.setDisabled(true);
+							bbar.last.setDisabled(true);
+							bbar.refresh.setDisabled(true);
+ 						}
+ 				}},
+ 				totalProperty:'result',root:'meta_device',
+ 				fields:[{name:'id', type:'string'},
+ 						{name:'devicename', type:'string'},
+ 						{name:'devicetype', type:'string'},
+ 						{name:'hostname', type:'string'},
+ 						{name:'deviceip', type:'string'},
+ 						{name:'loginway', type:'string'},
+ 						{name:'loginname', type:'string'},
+ 						{name:'password', type:'string'},
+ 						{name:'status', type:'string'},
+ 						{name:'lastonline', type:'string'},
+ 						{name:'devicepath', type:'string'},
+ 						{name:'deviceparent', type:'string'},
+ 						{name:'deviceinfo', type:'string'},
+ 						{name:'devicepurpose', type:'string'},
+ 						{name:'location', type:'string'},
+ 						{name:'devicedep', type:'string'},
+ 						{name:'onlinehosts', type:'string'}
+ 						]}
+ 						);
+//RouterStore.load();
+//路由信息Grid
+//var RouterGrid = 
+//路由器信息修改
+var RouterEditform = function(RecordOBJ,store){
+	     var RouterEditform_MyMask = new Ext.LoadMask(Ext.getBody(), { msg : "请等待..."});
+	     var RouterEdit_Form=new Ext.form.FormPanel({
+				 	baseCls: 'x-plain',url:'',layout:'absolute',defaultType: 'textfield',
+                    items: [
+                            {x: 80,y: itemsheight*1,name: 'id', xtype:'textfield',value :RecordOBJ.get('id'), maxLength:10,minLength:1, allowBlank:true, anchor:'90%',hidden:true },
+                            {x: 0, y: itemsheight*1,xtype:'label', text: '主机名:' },
+                            {x: 80,y: itemsheight*1,name: 'hostname', xtype:'textfield',value :RecordOBJ.get('hostname'),format:'Y-m-d',maxLength:10,minLength:1, allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*2,xtype:'label', text: 'IP地址:' },
+                            {x: 80,y: itemsheight*2,name: 'deviceip', xtype:'textfield',value :RecordOBJ.get('deviceip'),maxLength:15,minLength:1, allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*3,xtype:'label', text: '登录名:' },
+                            {x: 80,y: itemsheight*3,name: 'loginname', xtype:'textfield',value :RecordOBJ.get('loginname'),maxLength:10,minLength:1, allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*4,xtype:'label', text: '密码:' },
+                            {x: 80,y: itemsheight*4,name: 'password', xtype:'textfield',value :RecordOBJ.get('password'),maxLength:10,minLength:1, allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*5,xtype:'label', text: '状态:' },
+                            {x: 80, y: itemsheight*5,name: 'status', xtype: 'combo',value: RecordOBJ.get('status'),fieldLabel: '状态',maxLength:64,minLength:1, anchor:'90%',mode: 'local',editable: true, triggerAction: 'all', valueField: 'value', displayField: 'text',
+                            store: new Ext.data.SimpleStore({fields: ['value', 'text'], data: [['0', '离线'],['1', '在线']]})}, 
+                            {x: 0, y: itemsheight*6,xtype:'label', text: '最后在线时间:' },
+                            {x: 80,y: itemsheight*6,name: 'lastonline', xtype:'datetimefield',format: 'Y-m-d H:i:s', value :RecordOBJ.get('lastonline'), allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*7,xtype:'label', text: '设备归属:' },
+                            {x: 80,y: itemsheight*7,name: 'devicedep', xtype:'textfield', value :RecordOBJ.get('devicedep'), allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*8,xtype:'label', text: '设备信息:' },
+                            {x: 80,y: itemsheight*8,name: 'deviceinfo', xtype:'textfield', value :RecordOBJ.get('deviceinfo'), allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*9,xtype:'label', text: '设备维护人:' },
+                            {x: 80,y: itemsheight*9,name: 'devicepurpose', xtype:'textfield', value :RecordOBJ.get('devicepurpose'), allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*10,xtype:'label', text: '设备位置:' },
+                            {x: 80,y: itemsheight*10,name: 'location', xtype:'textfield', value :RecordOBJ.get('location'), allowBlank:true, anchor:'90%' }
+                    ]});
+                    
+          var RouterEdit_Window=new Ext.Window({ title: '修改路由器信息',modal : true,plain: true,
+                    width : 350,height : 350,resizable : false,layout : 'fit',closeAction:'hide',
+					bodyStyle : 'padding:5px;',buttonAlign : 'center',items : RouterEdit_Form,
+					buttons : [{
+						text : '保存',
+						handler : function() {// 验证
+							if (RouterEdit_Form.getForm().isValid()) {
+							    Ext.Ajax.request({ 
+							    url : servletPath,  
+							    method : 'POST',
+                                params:{
+                                actionname:'org.rm.action.RouterAction',
+                                actioncmd:'updatebyid',
+               		            id : RouterEdit_Form.getForm().findField('id').getValue(),
+               		            hostname : RouterEdit_Form.getForm().findField('hostname').getValue(),
+               		            deviceip : RouterEdit_Form.getForm().findField('deviceip').getValue(),
+               		            loginname : RouterEdit_Form.getForm().findField('loginname').getValue(),
+               		            password : RouterEdit_Form.getForm().findField('password').getValue(),
+               		            status : RouterEdit_Form.getForm().findField('status').getValue(),
+               		            lastonline : RouterEdit_Form.getForm().findField('lastonline').getValue(),
+               		            devicedep : RouterEdit_Form.getForm().findField('devicedep').getValue(),
+               		            deviceinfo : RouterEdit_Form.getForm().findField('deviceinfo').getValue(),
+               		            devicepurpose : RouterEdit_Form.getForm().findField('devicepurpose').getValue(),
+               		            location : RouterEdit_Form.getForm().findField('location').getValue()
+                                },
+                                callback : function(options, success, response) {
+                	       				RouterEditform_MyMask.hide();
+                	       				if (success){
+                	       					var JSONOBJ = Ext.util.JSON.decode(response.responseText);
+                	       					if (JSONOBJ.success==true){
+                	       						RouterEdit_Window.hide();
+                	       						Ext.MessageBox.alert('提示','路由器信息更新成功');
+                	       							RouterStore.reload();
+                	       					}else{
+                	       						Ext.MessageBox.alert('错误','路由器信息更新失败');
+                	       					}
+                	       				}else{
+                	       					Ext.MessageBox.alert('错误','数据库操作超时');
+                	       				}
+                	       			}})}
+           				}},{ text: '取消',handler:function(){ RouterEdit_Window.hide(); } }
+					]});    
+           RouterEdit_Window.show();
+           };
+           
+//路由器信息修改
+var RouterAddform = function(RecordOBJ,store){
+	     var RouterAddform_MyMask = new Ext.LoadMask(Ext.getBody(), { msg : "请等待..."});
+	     var RouterAdd_Form=new Ext.form.FormPanel({
+				 	baseCls: 'x-plain',url:'',layout:'absolute',defaultType: 'textfield',
+                    items: [
+                            {x: 80,y: itemsheight*1,name: 'id', xtype:'textfield', maxLength:10,minLength:1, allowBlank:true, anchor:'90%',hidden:true },
+                            {x: 0, y: itemsheight*1,xtype:'label', text: '主机名:' },
+                            {x: 80,y: itemsheight*1,name: 'hostname', xtype:'textfield',maxLength:10,minLength:1, allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*2,xtype:'label', text: 'IP地址:' },
+                            {x: 80,y: itemsheight*2,name: 'deviceip', xtype:'textfield',maxLength:15,minLength:1, allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*3,xtype:'label', text: '登录名:' },
+                            {x: 80,y: itemsheight*3,name: 'loginname', xtype:'textfield',maxLength:10,minLength:1, allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*4,xtype:'label', text: '密码:' },
+                            {x: 80,y: itemsheight*4,name: 'password', xtype:'textfield',maxLength:10,minLength:1, allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*5,xtype:'label', text: '状态:' },
+                            {x: 80, y: itemsheight*5,name: 'status', xtype: 'combo',fieldLabel: '状态',maxLength:64,minLength:1, anchor:'90%',mode: 'local',editable: true, triggerAction: 'all', valueField: 'value', displayField: 'text',
+                            store: new Ext.data.SimpleStore({fields: ['value', 'text'], data: [['0', '离线'],['1', '在线']]})}, 
+                            {x: 0, y: itemsheight*6,xtype:'label', text: '最后在线时间:' },
+                            {x: 80,y: itemsheight*6,name: 'lastonline', xtype:'datetimefield',format: 'Y-m-d H:i:s', allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*7,xtype:'label', text: '设备归属:' },
+                            {x: 80,y: itemsheight*7,name: 'devicedep', xtype:'textfield', allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*8,xtype:'label', text: '设备信息:' },
+                            {x: 80,y: itemsheight*8,name: 'deviceinfo', xtype:'textfield', allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*9,xtype:'label', text: '设备维护人:' },
+                            {x: 80,y: itemsheight*9,name: 'devicepurpose', xtype:'textfield',  allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*10,xtype:'label', text: '设备位置:' },
+                            {x: 80,y: itemsheight*10,name: 'location', xtype:'textfield', allowBlank:true, anchor:'90%' }
+                    ]});
+                    
+          var RouterAdd_Window=new Ext.Window({ title: '添加路由器信息',modal : true,plain: true,
+                    width : 350,height : 350,resizable : false,layout : 'fit',closeAction:'hide',
+					bodyStyle : 'padding:5px;',buttonAlign : 'center',items : RouterAdd_Form,
+					buttons : [{
+						text : '保存',
+						handler : function() {// 验证
+							if (RouterAdd_Form.getForm().isValid()) {
+							    Ext.Ajax.request({ 
+							    url : servletPath,  
+							    method : 'POST',
+                                params:{
+                                actionname:'org.rm.action.RouterAction',
+                                actioncmd:'insert',
+               		            hostname : RouterAdd_Form.getForm().findField('hostname').getValue(),
+               		            deviceip : RouterAdd_Form.getForm().findField('deviceip').getValue(),
+               		            loginname : RouterAdd_Form.getForm().findField('loginname').getValue(),
+               		            password : RouterAdd_Form.getForm().findField('password').getValue(),
+               		            status : RouterAdd_Form.getForm().findField('status').getValue(),
+               		            lastonline : RouterAdd_Form.getForm().findField('lastonline').getValue(),
+               		            devicedep : RouterAdd_Form.getForm().findField('devicedep').getValue(),
+               		            deviceinfo : RouterAdd_Form.getForm().findField('id').getValue(),
+               		            devicepurpose : RouterAdd_Form.getForm().findField('devicepurpose').getValue(),
+               		            location : RouterAdd_Form.getForm().findField('location').getValue(),
+               		            deviceinfo : RouterAdd_Form.getForm().findField('deviceinfo').getValue()
+                                },
+                                callback : function(options, success, response) {
+                	       				RouterAddform_MyMask.hide();
+                	       				if (success){
+                	       					var JSONOBJ = Ext.util.JSON.decode(response.responseText);
+                	       					if (JSONOBJ.success==true){
+                	       						RouterAdd_Window.hide();
+                	       						Ext.MessageBox.alert('提示','路由器信息添加成功');
+                	       						RouterStore.reload();
+                	       					}else{
+                	       						Ext.MessageBox.alert('错误','路由器信息添加失败');
+                	       					}
+                	       				}else{
+                	       					Ext.MessageBox.alert('错误','数据库操作超时');
+                	       				}
+                	       			}})}
+           				}},{ text: '取消',handler:function(){ RouterAdd_Window.hide(); } }
+					]});    
+           RouterAdd_Window.show();
+           };
 
 
-MyDesktop.TabWindow = Ext.extend(Ext.app.Module, {
-    id:'tab-win',
-    init : function(){
-        this.launcher = {
-            text: 'Tab Window',
-            iconCls:'tabs',
-            handler : this.createWindow,
-            scope: this
-        }
-    },
-
-    createWindow : function(){
-        var desktop = this.app.getDesktop();
-        var win = desktop.getWindow('tab-win');
-        if(!win){
-            win = desktop.createWindow({
-                id: 'tab-win',
-                title:'Tab Window',
-                width:740,
-                height:480,
-                iconCls: 'tabs',
-                shim:false,
-                animCollapse:false,
-                border:false,
-                constrainHeader:true,
-
-                layout: 'fit',
-                items:
-                    new Ext.TabPanel({
-                        activeTab:0,
-
-                        items: [{
-                            title: 'Tab Text 1',
-                            header:false,
-                            html : '<p>Something useful would be in here.</p>',
-                            border:false
-                        },{
-                            title: 'Tab Text 2',
-                            header:false,
-                            html : '<p>Something useful would be in here.</p>',
-                            border:false
-                        },{
-                            title: 'Tab Text 3',
-                            header:false,
-                            html : '<p>Something useful would be in here.</p>',
-                            border:false
-                        },{
-                            title: 'Tab Text 4',
-                            header:false,
-                            html : '<p>Something useful would be in here.</p>',
-                            border:false
-                        }]
-                    })
-            });
-        }
-        win.show();
-    }
-});
 
 
-
-MyDesktop.AccordionWindow = Ext.extend(Ext.app.Module, {
-    id:'acc-win',
-    init : function(){
-        this.launcher = {
-            text: 'Accordion Window',
-            iconCls:'accordion',
-            handler : this.createWindow,
-            scope: this
-        }
-    },
-
-    createWindow : function(){
-        var desktop = this.app.getDesktop();
-        var win = desktop.getWindow('acc-win');
-        if(!win){
-            win = desktop.createWindow({
-                id: 'acc-win',
-                title: 'Accordion Window',
-                width:250,
-                height:400,
-                iconCls: 'accordion',
-                shim:false,
-                animCollapse:false,
-                constrainHeader:true,
-
-                tbar:[{
-                    tooltip:{title:'Rich Tooltips', text:'Let your users know what they can do!'},
-                    iconCls:'connect'
-                },'-',{
-                    tooltip:'Add a new user',
-                    iconCls:'user-add'
-                },' ',{
-                    tooltip:'Remove the selected user',
-                    iconCls:'user-delete'
-                }],
-
-                layout:'accordion',
-                border:false,
-                layoutConfig: {
-                    animate:false
-                },
-
-                items: [
-                    new Ext.tree.TreePanel({
-                        id:'im-tree',
-                        title: 'Online Users',
-                        loader: new Ext.tree.TreeLoader(),
-                        rootVisible:false,
-                        lines:false,
-                        autoScroll:true,
-                        tools:[{
-                            id:'refresh',
-                            on:{
-                                click: function(){
-                                    var tree = Ext.getCmp('im-tree');
-                                    tree.body.mask('Loading', 'x-mask-loading');
-                                    tree.root.reload();
-                                    tree.root.collapse(true, false);
-                                    setTimeout(function(){ // mimic a server call
-                                        tree.body.unmask();
-                                        tree.root.expand(true, true);
-                                    }, 1000);
-                                }
-                            }
-                        }],
-                        root: new Ext.tree.AsyncTreeNode({
-                            text:'Online',
-                            children:[{
-                                text:'Friends',
-                                expanded:true,
-                                children:[{
-                                    text:'Jack',
-                                    iconCls:'user',
-                                    leaf:true
-                                },{
-                                    text:'Brian',
-                                    iconCls:'user',
-                                    leaf:true
-                                },{
-                                    text:'Jon',
-                                    iconCls:'user',
-                                    leaf:true
-                                },{
-                                    text:'Tim',
-                                    iconCls:'user',
-                                    leaf:true
-                                },{
-                                    text:'Nige',
-                                    iconCls:'user',
-                                    leaf:true
-                                },{
-                                    text:'Fred',
-                                    iconCls:'user',
-                                    leaf:true
-                                },{
-                                    text:'Bob',
-                                    iconCls:'user',
-                                    leaf:true
-                                }]
-                            },{
-                                text:'Family',
-                                expanded:true,
-                                children:[{
-                                    text:'Kelly',
-                                    iconCls:'user-girl',
-                                    leaf:true
-                                },{
-                                    text:'Sara',
-                                    iconCls:'user-girl',
-                                    leaf:true
-                                },{
-                                    text:'Zack',
-                                    iconCls:'user-kid',
-                                    leaf:true
-                                },{
-                                    text:'John',
-                                    iconCls:'user-kid',
-                                    leaf:true
-                                }]
-                            }]
-                        })
-                    }), {
-                        title: 'Settings',
-                        html:'<p>Something useful would be in here.</p>',
-                        autoScroll:true
-                    },{
-                        title: 'Even More Stuff',
-                        html : '<p>Something useful would be in here.</p>'
-                    },{
-                        title: 'My Stuff',
-                        html : '<p>Something useful would be in here.</p>'
-                    }
-                ]
-            });
-        }
-        win.show();
-    }
-});
-
-// for example purposes
-var windowIndex = 0;
-
-MyDesktop.BogusModule = Ext.extend(Ext.app.Module, {
-    init : function(){
-        this.launcher = {
-            text: 'Window '+(++windowIndex),
-            iconCls:'bogus',
-            handler : this.createWindow,
-            scope: this,
-            windowId:windowIndex
-        }
-    },
-
-    createWindow : function(src){
-        var desktop = this.app.getDesktop();
-        var win = desktop.getWindow('bogus'+src.windowId);
-        if(!win){
-            win = desktop.createWindow({
-                id: 'bogus'+src.windowId,
-                title:src.text,
-                width:640,
-                height:480,
-                html : '<p>Something useful would be in here.</p>',
-                iconCls: 'bogus',
-                shim:false,
-                animCollapse:false,
-                constrainHeader:true
-            });
-        }
-        win.show();
-    }
-});
+var InfoShowform = function(OBJ,HostStore){
+	
+	var HostStore = new Ext.data.JsonStore({
+ 				url:"../servlet",
+ 				baseParams:{
+	 				actionname:'org.rm.action.HostAction',
+	 				actioncmd:'queryall',
+	 				deviceid:OBJ.get('id')
+ 				},
+ 				listeners:{
+ 					clear: function(){
+ 						if ( bbar = RouterGrid.getBottomToolbar()){
+ 							bbar.updateInfo();
+							bbar.next.setDisabled(true);
+							bbar.prev.setDisabled(true);
+							bbar.first.setDisabled(true);
+							bbar.last.setDisabled(true);
+							bbar.refresh.setDisabled(true);
+ 						}
+ 				}},
+ 				totalProperty:'result',root:'d_host',
+ 				fields:[{name:'contextid', type:'string'},
+ 						{name:'deviceid', type:'string'},
+ 						{name:'contextname', type:'string'},
+ 						{name:'ctxid', type:'string'},
+ 						{name:'hstid', type:'string'},
+ 						{name:'vapnrd', type:'string'},
+ 						{name:'description', type:'string'},
+ 						{name:'ipaddr', type:'string'},
+ 						{name:'macaddr', type:'string'},
+ 						{name:'ttl', type:'string'},
+ 						{name:'type', type:'string'},
+ 						{name:'circuit', type:'string'},
+ 						{name:'status', type:'string'}
+ 						]}
+);
+	     var InfoShow_Grid=new Ext.grid.GridPanel({
+							//header:true, region:'center', split:true, loadMask:true,
+							//border : true,stripeRows : false, enableHdMenu:false,
+							store : HostStore,
+							columns: [
+								{header:'Host Id',dataIndex:'hstid',width:30,hidden:false},
+								{header:'Context Name',dataIndex:'contextname',sortable:true,width:77},
+								{header:'Context Id',dataIndex:'contextid',sortable:true,width:77},
+								{header:'VPN RD',dataIndex:'vapnrd',sortable:true,width:77},
+								{header:'IP Address',dataIndex:'ipaddr',sortable:true,width:77},
+								{header:'Mac Address',dataIndex:'macaddr',sortable:true,width:77},
+								{header:'TTL',dataIndex:'ttl',sortable:true,width:77},
+								{header:'Type',dataIndex:'type',sortable:true,width:37},
+								{header:'Circuit',dataIndex:'circuit',sortable:true,width:157},
+								{header:'Status',dataIndex:'status',sortable:true,width:77}
+							],
+							tbar : [{text : '添加主机',tooltip : '添加主机',iconCls : 'add',handler : function() {
+								    // RouterAddform(RouterStore);
+									 }} ]//,
+							//bbar: Offerbbar
+		});
+		
+		var InfoShow_Window=new Ext.Window({ title: '添加主机信息',modal : true,plain: true,
+                    width : 750,height : 350,resizable : false,layout : 'fit',closeAction:'hide',
+					bodyStyle : 'padding:5px;',buttonAlign : 'center',items : InfoShow_Grid
+		});
+		InfoShow_Window.show();
+		HostStore.reload();
+};
 
 
-MyDesktop.BogusMenuModule = Ext.extend(MyDesktop.BogusModule, {
-    init : function(){
-        this.launcher = {
-            text: 'Bogus Submenu',
-            iconCls: 'bogus',
-            handler: function() {
-				return false;
-			},
-            menu: {
-                items:[{
-                    text: 'Bogus Window '+(++windowIndex),
-                    iconCls:'bogus',
-                    handler : this.createWindow,
-                    scope: this,
-                    windowId: windowIndex
-                    },{
-                    text: 'Bogus Window '+(++windowIndex),
-                    iconCls:'bogus',
-                    handler : this.createWindow,
-                    scope: this,
-                    windowId: windowIndex
-                    },{
-                    text: 'Bogus Window '+(++windowIndex),
-                    iconCls:'bogus',
-                    handler : this.createWindow,
-                    scope: this,
-                    windowId: windowIndex
-                    },{
-                    text: 'Bogus Window '+(++windowIndex),
-                    iconCls:'bogus',
-                    handler : this.createWindow,
-                    scope: this,
-                    windowId: windowIndex
-                    },{
-                    text: 'Bogus Window '+(++windowIndex),
-                    iconCls:'bogus',
-                    handler : this.createWindow,
-                    scope: this,
-                    windowId: windowIndex
-                }]
-            }
-        }
-    }
-});
 
 
-// Array data for the grid
-Ext.grid.dummyData = [
-    ['3m Co',71.72,0.02,0.03,'9/1 12:00am'],
-    ['Alcoa Inc',29.01,0.42,1.47,'9/1 12:00am'],
-    ['American Express Company',52.55,0.01,0.02,'9/1 12:00am'],
-    ['American International Group, Inc.',64.13,0.31,0.49,'9/1 12:00am'],
-    ['AT&T Inc.',31.61,-0.48,-1.54,'9/1 12:00am'],
-    ['Caterpillar Inc.',67.27,0.92,1.39,'9/1 12:00am'],
-    ['Citigroup, Inc.',49.37,0.02,0.04,'9/1 12:00am'],
-    ['Exxon Mobil Corp',68.1,-0.43,-0.64,'9/1 12:00am'],
-    ['General Electric Company',34.14,-0.08,-0.23,'9/1 12:00am'],
-    ['General Motors Corporation',30.27,1.09,3.74,'9/1 12:00am'],
-    ['Hewlett-Packard Co.',36.53,-0.03,-0.08,'9/1 12:00am'],
-    ['Honeywell Intl Inc',38.77,0.05,0.13,'9/1 12:00am'],
-    ['Intel Corporation',19.88,0.31,1.58,'9/1 12:00am'],
-    ['Johnson & Johnson',64.72,0.06,0.09,'9/1 12:00am'],
-    ['Merck & Co., Inc.',40.96,0.41,1.01,'9/1 12:00am'],
-    ['Microsoft Corporation',25.84,0.14,0.54,'9/1 12:00am'],
-    ['The Coca-Cola Company',45.07,0.26,0.58,'9/1 12:00am'],
-    ['The Procter & Gamble Company',61.91,0.01,0.02,'9/1 12:00am'],
-    ['Wal-Mart Stores, Inc.',45.45,0.73,1.63,'9/1 12:00am'],
-    ['Walt Disney Company (The) (Holding Company)',29.89,0.24,0.81,'9/1 12:00am']
-];
+
+
+
+

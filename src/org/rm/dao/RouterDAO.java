@@ -102,7 +102,7 @@ public class RouterDAO {
 			String updateSQL = "update meta_device set Status=? , LastOnline=? where id=?";
 			pstmt = conn.prepareStatement(updateSQL);
 			pstmt.setInt(1, device.getStatus());
-			pstmt.setTimestamp(2, device.getLastOnline());
+			pstmt.setString(2, device.getLastOnline());
 			pstmt.setInt(3, device.getId());
 			flag = pstmt.executeUpdate();
 		}catch(Exception e){
@@ -156,7 +156,7 @@ public class RouterDAO {
 		try{
 			db = new dbquery();
 			String field = "id";
-			String whereSQL = "IpAddr='"+host.getIpAddr()+"' and MacAddr='"+host.getMacAddr()+"'";
+			String whereSQL = "IpAddr='"+host.getIpAddr()+"' and MacAddr='"+host.getMacAddr()+"' and ContextId='"+host.getContextId()+"'";
 			id = db.DBResultTableValueOfInt(host.getTableName(), field, whereSQL);
 			
 			host.AddFilterFild("id");

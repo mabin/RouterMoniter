@@ -26,13 +26,13 @@ public class ScriptsListener implements ServletContextListener{
 		InitTimer = new Timer(true);
 		
 		//ping定时器在程序启动后15秒开始执行，每隔1天执行一次。
-		InitTimer.schedule(new InitInfos(event.getServletContext()), 15*1000,24*60*60*1000);
-		System.out.println("InitTimer Initialized at : "+Calendar.getInstance().getTime());
+		//InitTimer.schedule(new InitInfos(event.getServletContext()), 15*1000,24*60*60*1000);
+	//	System.out.println("InitTimer Initialized at : "+Calendar.getInstance().getTime());
 		
 		//ping定时器在程序启动后2分钟开始执行，每隔1个小时执行一次。
 		//ScriptTimer.schedule(new ScriptsRun(event.getServletContext()), 10*1000,60*60*1000);
-		ScriptTimer.schedule(new ScriptsRun(event.getServletContext()), 2*60*1000,60*60*1000);
-		System.out.println("ScriptTimer Initialized at : "+Calendar.getInstance().getTime());
+	//	ScriptTimer.schedule(new ScriptsRun(event.getServletContext()), 2*60*1000,60*60*1000);
+	//	System.out.println("ScriptTimer Initialized at : "+Calendar.getInstance().getTime());
 	}
 
 }
