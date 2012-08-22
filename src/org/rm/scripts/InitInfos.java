@@ -1,8 +1,6 @@
 package org.rm.scripts;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.TimerTask;
@@ -30,7 +28,7 @@ public class InitInfos extends TimerTask{
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
-		System.out.println("Run Init Method");
+		System.out.println("**********InitInfo.Run Init Method**********");
 		List<MetaDevice> allDevice = getDevicesInfo();
 		System.out.println("init run method router size : "+allDevice.size());
 		//脚本名称
@@ -59,16 +57,40 @@ public class InitInfos extends TimerTask{
 			if (biz.updateRouterInfo(device1) != -1){
 				log.debug(this.getClass(),"update router success");
 				
-				//通过脚本获取到contextList,格式List<Map<String,String>>
-				//通过脚本获取到HIMapList,格式List<Map<String,Object>>,将文档"路由巡检list定义0818.docx"中2的resultList名字改为hiMapList
-				//H表示Host，I表示Interface，map代表这是context 与 （host，interface)的映射list，原来的名字容易引起歧义
-				//将脚本获取到的两个List及router id同时传入biz层中的update方法
+				RouterPing ping = new RouterPing();
+				
+				System.out.println("RouterPing ping = new RouterPing(); ");
+				
+				ping.setShell(shell);
+				
+				ping.run();
+				
+				int routerID = device1.getId();
+				
+				System.out.println("int routerID = device1.getId();"+ routerID);
+				
+				/**
+				 * 这个方法设计思路：
+				 * 1、进入在线路由获取到当前路由器的所有context结果集，然后更新或添加context
+				 * 2、2、通过跟心context获取到当前context的数据库id 并返回
+				 * 3、将context的id传入更新主机和interface的方法，然后更新对应主机
+				 * 
+				 */
+				
 				List<Map<String,String>> contextList = new ArrayList<Map<String,String>>();
+				
 				List<Map<String,Object>> hiMapList = new ArrayList<Map<String,Object>>();
+				
+				contextList = ping.getContextList();
+				
+				hiMapList =ping.getResultList();
+				
 				biz.updateContextInfo(contextList, hiMapList, device1.getId());
+								
+//			biz.updateContextInfo(/*这个参数为context的结果集List<Map<String,Object>>*/ping.getContextList(),ping.getResultList(),routerID);
 				
-				
-				
+				//调用biz，修改Host状态
+				//biz.updateHostInfo(resultList,contextID);
 			}else{
 				log.error(this.getClass(),"update router info failure");
 			}

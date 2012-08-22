@@ -9,105 +9,207 @@ import java.util.Map;
 import java.util.Scanner;
 
 import org.rm.biz.PingBiz;
+import org.rm.core.log;
+
 import org.rm.utils.VituralConsole;
 
-public class RouterPing implements Analysis,Runnable{
-	private  VituralConsole shell = null;
+public class RouterPing implements Analysis, Runnable {
+
+	private String hostName = null;
+
+	private VituralConsole shell = null;
+
 	private List<String> commandList = new ArrayList<String>();
-	public List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
-	
-	public List<Map<String,String>> getAllContext(){
-		String[] commands = {"show context all"," "};
-		if (getShell().executeCommands(commands)){
-			return AnalysisContext(getShell().getResponse(), "Context");
+
+	private List<Map<String, String>> contextList = new ArrayList<Map<String, String>>();
+
+	public List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
+
+	public void RouterInit() {
+
+		this.HostNameInit();
+		this.RouterContextInit();
+		this.ContextArpInterfaceInit(this.contextList);
+	}
+
+	public void HostNameInit() {
+		String[] commandsHostName = { "\r" };
+		String hostName = null;
+		if (shell.executeCommands(commandsHostName)) {
+			this.hostName = AnalysisHostName(shell.getResponse());
+			System.out.println(hostName);
 		}
-		return null ;
 	}
-	public boolean switchContext(String contextName){
-		String[] commands = {"\r","context "+contextName};
-		return getShell().executeCommands(commands);
+
+	public void RouterContextInit() {
+		String[] commands = { "show context all", " " };
+		if (shell.executeCommands(commands)) {
+			this.contextList = AnalysisContext(shell.getResponse(), "Context");
+		}
 	}
-	
-	public List<Map<String,String>> getHostsByContext(){
-		String[] arpCommand = {"\r","show arp"};
-		if(getShell().executeCommands(arpCommand)){
-			 return  AnalysisArp(getShell().getResponse(), "Host");
+
+	public String AnalysisHostName(StringBuffer buffer) {
+
+		StringBuffer bufferInfo = new StringBuffer();
+
+		bufferInfo = buffer;
+
+		System.out
+				.println("******begin*********the out put for ---- \r --------by jenny --------0808--------");
+
+		System.out.println(bufferInfo);
+
+		System.out
+				.println("******end*********the out put for ----- \r --------by jenny --------0808--------");
+
+		Scanner scan = new Scanner(new InputStreamReader(
+				new ByteArrayInputStream(bufferInfo.toString().getBytes())));
+
+		String hostname = null;
+		;
+		String line = "";
+		while ((line = scan.nextLine()) != null && (line.contains("]"))) {
+			System.out
+					.println("******the while line*********the out put for ----- line----------------");
+
+			System.out.println("the line is :" + line + "-------------------");
+
+			int beginInt = line.indexOf("]");
+			int endInt = line.indexOf("#");
+			hostname = line.substring(beginInt + 1, endInt);
+
+			System.out.println("the line beginInt is :" + beginInt
+					+ "  the endInt is: " + endInt + "the hostname is :"
+					+ hostname + "**********");
+			System.out.println(line);
+			return hostname;
+		}
+		return hostname;
+	}
+
+	public List<Map<String, String>> AnalysisInterface(StringBuffer buffer,
+			String regex) {
+		List<Map<String, String>> valueList = new ArrayList<Map<String, String>>();
+		List<Map<String, String>> valueListNew = new ArrayList<Map<String, String>>();
+
+		StringBuffer bufferInfo = new StringBuffer();
+		bufferInfo = buffer;
+		Scanner scan = new Scanner(new InputStreamReader(
+				new ByteArrayInputStream(bufferInfo.toString().getBytes())));
+		System.out
+				.println("*************the result for show ip brief Interface:**********begin**********");
+		System.out.println(bufferInfo.toString());
+		System.out
+			   .println("*************the result for show ip brief Interface:**********end**********");
+
+		List<String> headerList = new ArrayList<String>();
+		String header = "";
+		while ((header = scan.nextLine()).indexOf(regex) == -1) {
+		}
+		String headers[] = header.split("\\s\\s+");
+
+		for (String tem : headers) {
+
+			headerList.add(tem);
+
+			System.out.println("headers :" + tem);
+		}
+
+		while (scan.hasNext()) {
+			String strs[] = scan.nextLine().split("\\s");
+			Map<String, String> valueMap = new HashMap<String, String>();
+			for (int j = 0; j < strs.length; j++) {
+				valueMap.put(headerList.get(j), strs[j]);
+				System.out.println(headerList.get(j) + "-->" + strs[j]);
+			}
+
+			if (valueMap.get(headerList.get(0)) != null
+					&& valueMap.get(headerList.get(1)) != null) {
+
+				valueList.add(valueMap);
+			}
+		}
+		for (int i = 0; i < valueList.size(); i++) {
+			Map<String, String> mapNew = new HashMap<String, String>();
+			mapNew.put("Name", valueList.get(i).get(headerList.get(0)));
+
+			mapNew.put("Address", valueList.get(i).get(headerList.get(1)));
+
+			mapNew.put("MTU", valueList.get(i).get(headerList.get(2)));
+
+			mapNew.put("State", valueList.get(i).get(headerList.get(3)));
+			mapNew.put("Bindings", valueList.get(i).get(headerList.get(4)));
+			valueListNew.add(mapNew);
+		}
+		for (int m = 0; m < headerList.size(); m++) {
+			System.out.println("the headList is Empty : "
+					+ headerList.isEmpty());
+
+			System.out.println("the headList is to String  :  "
+					+ headerList.toString());
+
+			System.out
+					.println("the " + m + " headList is " + headerList.get(m));
+
+		}
+		try {
+			scan.close();
+			System.out.println(valueList.size());
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+		}
+		return valueListNew;
+	}
+
+	public List<Map<String, String>> getAllContext() {
+		String[] commands = { "show context all", " " };
+		if (getShell().executeCommands(commands)) {
+			this.contextList = AnalysisContext(shell.getResponse(), "Context");
+			return this.contextList;
 		}
 		return null;
 	}
-	
-	public boolean pingHost(String hostIP){
-		String[] pingCommand = {"\r","ping "+hostIP};
-		if (getShell().executeCommands(pingCommand)){
-			return AnalysisPing(getShell().getResponse());
+
+	public boolean switchContext(String contextName) {
+		String[] commands = { "\r", "context " + contextName };
+		return getShell().executeCommands(commands);
+	}
+
+	public List<Map<String, String>> getHostsByContext() {
+		String[] arpCommand = { "\r", "show arp" };
+		if (getShell().executeCommands(arpCommand)) {
+			return AnalysisArp(shell.getResponse(), "Host");
+		}
+		return null;
+	}
+
+	public List<Map<String, String>> getInterfaceByContext() {
+		String[] arpCommand = { "\r", "show ip interface brief" };
+		if (getShell().executeCommands(arpCommand)) {
+			return AnalysisInterface(shell.getResponse(), "Name");
+		}
+		return null;
+	}
+
+	public boolean pingHost(String hostIP) {
+		String[] pingCommand = { "\r", "ping " + hostIP };
+		if (getShell().executeCommands(pingCommand)) {
+			return AnalysisPing(shell.getResponse());
 		}
 		return false;
 	}
-	
-	@Override
-	public void run() {
-		// TODO Auto-generated method stub
-		
-		//List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
-		List<Map<String,String>> contextList =	getAllContext()	;	
-		for (int i=0; i<contextList.size();i++){
-			//结果集map，用于存储context对应主机状态
-			Map<String,Object> resultMap = new HashMap<String,Object>();
-			
-			Map<String,String> map =new HashMap<String,String>();
-			map = contextList.get(i);
-			
-			resultMap.put("ContextName", map.get("Context Name"));
-			
-			if (switchContext(map.get("Context Name"))){
-				List<Map<String,String>> arpList = getHostsByContext();
-				if (arpList == null){
-					resultMap.put("ip_status", null);
-					resultList.add(resultMap);
-					continue;
-				}
-				
-				List<String> ipList = new ArrayList<String>();
-				for (int j=0; j<arpList.size();j++){
-					Map<String,String> arpMap = new HashMap<String,String>();
-					arpMap = arpList.get(i);
-					
-					if (pingHost(arpMap.get("Host"))){
-						boolean pingResult = AnalysisPing(getShell().getResponse());
-							ipList.add(arpMap.get("Host")+"--"+pingResult);
-					}
-				}
-				resultMap.put("ip_status", ipList);
-			}
-				resultList.add(resultMap);
-		}
-		/*
-		System.out.println("**********************结果集BEGIN*****************************");
-		System.out.println(resultList.size());
-		for (Map<String,Object> rsmap:resultList){
-			//取出结果集的中每个map，map的key分别为：contextname<string>, ip_status<list>
-			String contextName = (String) rsmap.get("ContextName");
-			List<String> ips = (List<String>) rsmap.get("ip_status");
-			//如果这个context没有主机,只打印contextname
-			if (ips == null){
-				System.out.println("["+contextName+"]"+" null hosts");
-				continue;
-			}
-			//如果这个context有主机,打印contextname--IP-result
-			for (String ipStr: ips){
-				System.out.println("["+contextName+"] -- "+ipStr);
-			}
-		}
-		
-		System.out.println("**********************结果集END*****************************");
-		*/
-		/**
-		 * resultList{{map1{ContextName-a,ip_status{1.1.1.1:true,2.2.2.2-false}}},{map1{ContextName-b,ip_status{3.3.3.3:true,4.4.4.4-false}}}}
-		 */
-		
-	
-	}
-	
+
+	/*
+	 * @Override public void run() { // TODO Auto-generated method stu
+	 */
+
+	/**
+	 * resultList{{map1{ContextName-a,ip_status{1.1.1.1:true,2.2.2.2-false}}},{
+	 * map1{ContextName-b,ip_status{3.3.3.3:true,4.4.4.4-false}}}}
+	 */
+
 	/**
 	 * 
 	 * @param buffer
@@ -124,6 +226,11 @@ public class RouterPing implements Analysis,Runnable{
 		StringBuffer bufferInfo = new StringBuffer();
 
 		bufferInfo = buffer;
+		
+		log.debug(this.getClass(),"********** the result for show context all***** begin *** ");
+		System.out.println(bufferInfo);
+		
+		log.debug(this.getClass(),"********** the result for show context all***** end *** ");	
 
 		Scanner scan = new Scanner(new InputStreamReader(
 				new ByteArrayInputStream(bufferInfo.toString().getBytes())));
@@ -156,9 +263,25 @@ public class RouterPing implements Analysis,Runnable{
 			Map<String, String> mapNew = new HashMap<String, String>();
 
 			mapNew.put("Context Name", valueList.get(i).get(headerList.get(0)));
+
+			System.out.println("----the context num:" + i + " Context Name:"
+					+ valueList.get(i).get(headerList.get(0)));
+
 			mapNew.put("Context ID", valueList.get(i).get(headerList.get(1)));
+
+			System.out.println("----the context num:" + i + " Context ID:"
+					+ valueList.get(i).get(headerList.get(1)));
+
 			mapNew.put("VPN-RD", valueList.get(i).get(headerList.get(2)));
+
+			System.out.println("----the context num:" + i + " VPN-RD:"
+					+ valueList.get(i).get(headerList.get(2)));
+
 			mapNew.put("Description", valueList.get(i).get(headerList.get(3)));
+
+			System.out.println("----the context num:" + i + " Description:"
+					+ valueList.get(i).get(headerList.get(3)));
+
 			valueListNew.add(mapNew);
 		}
 
@@ -170,8 +293,9 @@ public class RouterPing implements Analysis,Runnable{
 		return valueListNew;
 	}
 
-	public List<Map<String, String>> AnalysisArp(StringBuffer buffer,String regex) {
-		
+	public List<Map<String, String>> AnalysisArp(StringBuffer buffer,
+			String regex) {
+
 		List<Map<String, String>> valueList = new ArrayList<Map<String, String>>();
 
 		List<Map<String, String>> valueListNew = new ArrayList<Map<String, String>>();
@@ -180,6 +304,10 @@ public class RouterPing implements Analysis,Runnable{
 		bufferInfo = buffer;
 		Scanner scan = new Scanner(new InputStreamReader(
 				new ByteArrayInputStream(bufferInfo.toString().getBytes())));
+		log.debug(this.getClass(),"********** the result for show arp****  begin *** ");
+		System.out.println(bufferInfo);
+		
+		log.debug(this.getClass(),"********** the result for show arp***** end *** ");	
 
 		String arpCache = "";
 		while ((arpCache = scan.nextLine()).indexOf("Total number of arp entries in cache") == -1) {}
@@ -192,7 +320,8 @@ public class RouterPing implements Analysis,Runnable{
 
 		List<String> headerList = new ArrayList<String>();
 		String header = "";
-		while ((header = scan.nextLine()).indexOf(regex) == -1) {}
+		while ((header = scan.nextLine()).indexOf(regex) == -1) {
+		}
 		String headers[] = header.split("\\s\\s+");
 		for (String tem : headers) {
 			headerList.add(tem);
@@ -213,10 +342,12 @@ public class RouterPing implements Analysis,Runnable{
 		for (int i = 0; i < valueList.size(); i++) {
 			Map<String, String> mapNew = new HashMap<String, String>();
 			mapNew.put("Host", valueList.get(i).get(headerList.get(0)));
-			mapNew.put("Hardware address",
-					valueList.get(i).get(headerList.get(1)));
+			mapNew.put("Hardware address",valueList.get(i).get(headerList.get(1)));
 			mapNew.put("Ttl", valueList.get(i).get(headerList.get(2)));
+			mapNew.put("Type", valueList.get(i).get(headerList.get(3)));			
 			mapNew.put("Circuit", valueList.get(i).get(headerList.get(4)));
+			mapNew.put("PingStatus", "false");
+
 			valueListNew.add(mapNew);
 		}
 		try {
@@ -226,7 +357,6 @@ public class RouterPing implements Analysis,Runnable{
 			e.printStackTrace();
 		}
 		return valueListNew;
-
 	}
 
 	public boolean AnalysisPing(StringBuffer buffer) {
@@ -234,13 +364,18 @@ public class RouterPing implements Analysis,Runnable{
 			StringBuffer bufferInfo = new StringBuffer();
 			bufferInfo = buffer;
 			
+			log.debug(this.getClass(),"********** the result for show arp***** begin ***** ");
+			System.out.println(bufferInfo);
+			
+			log.debug(this.getClass(),"********** the result for show arp*****  end  ***** ");	
+
 			Scanner scan = new Scanner(new InputStreamReader(
 					new ByteArrayInputStream(bufferInfo.toString().getBytes())));
 			scan.nextLine();
 			String header = "";
 			while ((header = scan.nextLine()) != null) {
-				
-				if (header.charAt(0)=='!') {
+
+				if (header.charAt(0) == '!') {
 					scan.close();
 					return true;
 				}
@@ -252,11 +387,137 @@ public class RouterPing implements Analysis,Runnable{
 		return false;
 	}
 
+	public void ContextArpInterfaceInit(List<Map<String, String>> contextList) {
 
-	
-	
-	public List<Map<String,Object>> getResult(){
-		return resultList;
+		/*
+		 * interfaceMap: store the interface information in every context
+		 * arpMap: store the host infomation in every context
+		 * contextResourceList : the List for context resource contain
+		 * arp/interface Author : Jenny Liang DateTime : 2012-08-08
+		 */
+
+		List<Map<String, Object>> ArpInterfaceResultList = new ArrayList<Map<String, Object>>();
+
+		// Map<String, Object> resultMap = null;
+
+		// List<Map<String,String>> arpList = null;
+
+		// List<Map<String,String>> interfaceList = null;
+
+		for (int i = 0; i < contextList.size(); i++) {
+
+			Map<String, Object> resultMap = new HashMap<String, Object>();
+
+			List<Map<String, String>> arpList = new ArrayList<Map<String, String>>();
+
+			List<Map<String, String>> interfaceList = new ArrayList<Map<String, String>>();
+
+			String contextName = contextList.get(i).get("Context Name");
+			String contextId = contextList.get(i).get("Context ID");
+
+			resultMap.put("Context Name", contextName);
+			resultMap.put("Context ID",contextId);
+
+			if (switchContext(contextName)) {
+
+				arpList = getHostsByContext();
+
+				interfaceList = getInterfaceByContext();
+
+				// resultMap.put("InterfaceList",interfaceList);
+
+				if (arpList == null) {
+
+					resultMap.put("Host_List", null);
+
+					System.out.println("---context name: " + contextName
+							+ "the arpList is null");
+
+				} else {
+
+					for (int j = 0; j < arpList.size(); j++) {
+
+						if (pingHost(arpList.get(j).get("Host"))) {
+
+							arpList.get(j).remove("PingStatus");
+							arpList.get(j).put("PingStatus", "True");
+						}
+					}
+					resultMap.put("Host_List", arpList);
+				}
+
+				if (interfaceList == null) {
+
+					resultMap.put("Interface_List", null);
+
+				} else {
+
+					resultMap.put("Interface_List", interfaceList);
+
+				}
+
+				ArpInterfaceResultList.add(resultMap);
+
+				// ------the test program for the arpList------begin-------
+
+				if (arpList == null) {
+
+					System.out
+							.println("------------- the arpList is null----------");
+				} else {
+
+					for (int m = 0; m < arpList.size(); m++) {
+
+						System.out.println(" the size for arpList : " + m
+								+ " is :" + arpList.size());
+
+						Map<String, String> arpMap = new HashMap<String, String>();
+
+						arpMap = arpList.get(m);
+
+						System.out.println(arpMap.get("Host"));
+						System.out.println(arpMap.get("Hardware address"));
+						System.out.println(arpMap.get("Ttl"));
+						System.out.println(arpMap.get("Type"));
+						System.out.println(arpMap.get("Circuit"));
+						System.out.println(arpMap.get("PingStatus"));
+					}
+				}
+
+				// ------the test program for the arpList------end----------
+
+				// ------the test program for the
+				// interfaceList------begin---------
+
+				if (interfaceList == null) {
+
+					System.out
+							.println("------------- the interfaceList is null----------");
+				} else {
+
+					for (int k = 0; k < interfaceList.size(); k++) {
+
+						System.out.println(" the size for interface : " + k
+								+ " is :" + interfaceList.size());
+
+						Map<String, String> interfaceMap = new HashMap<String, String>();
+
+						interfaceMap = interfaceList.get(k);
+
+						System.out.println(interfaceMap.get("Name"));
+						System.out.println(interfaceMap.get("Address"));
+						System.out.println(interfaceMap.get("MTU"));
+						System.out.println(interfaceMap.get("State"));
+						System.out.println(interfaceMap.get("Bindings"));
+
+					}
+					// ------the test program for the
+					// interfaceList------end---------
+				}
+
+				this.resultList = ArpInterfaceResultList;
+			}
+		}
 	}
 
 	public VituralConsole getShell() {
@@ -275,5 +536,153 @@ public class RouterPing implements Analysis,Runnable{
 		this.commandList = commandList;
 	}
 
+	public String getHostName() {
+		return hostName;
+	}
+
+	public List<Map<String, String>> getContextList() {
+		return contextList;
+	}
+
+	public List<Map<String, Object>> getResultList() {
+		return resultList;
+	}
+
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+
+		RouterInit();
+
+		// below is the test modlue
+
+		System.out
+				.println("**********************结果集BEGIN*****************************");
+
+		System.out.println("the result list size: " + resultList.size());
+
+		System.out
+				.println("********************** context list ************************");
+
+		int jhostNum = 0;
+		
+		System.out
+		.println("**********************结果集BEGIN*****************************");
+
+		for (int iContextNum = 0; iContextNum < resultList.size(); iContextNum++) {
+
+			Map<String, Object> rsMap = resultList.get(iContextNum);
+			// new HashMap<String,Object>();
+
+			String contextName = (String) rsMap.get("Context Name");
+
+			System.out.println("----context num: " + iContextNum
+					+ "--- context name:" + contextName + "------");
+
+			List<Map<String, String>> interfaceList = new ArrayList<Map<String, String>>();
+
+			List<Map<String, String>> arpList = new ArrayList<Map<String, String>>();
+
+			interfaceList = (List<Map<String, String>>) rsMap
+					.get("Interface_List");
+
+			arpList = (List<Map<String, String>>) rsMap.get("Host_List");
+
+			// -----------the test for the arpList
+			// -------------begin------------------
+
+			System.out
+					.println("----context num: " + iContextNum
+							+ " context name:" + contextName
+							+ "--the arpList size is:");
+
+			if (arpList == null) {
+				System.out.println("arpList is null");
+			} else {
+				System.out.println(arpList.size());
+
+				for (int jHostNum = 0; jHostNum < arpList.size(); jHostNum++) {
+
+					Map<String, String> arpMap = new HashMap<String, String>();
+
+					arpMap = arpList.get(jHostNum);
+
+					System.out.println(arpMap.get("Host"));
+					System.out.println(arpMap.get("Hardware address"));
+					System.out.println(arpMap.get("Ttl"));
+					System.out.println(arpMap.get("Type"));
+					System.out.println(arpMap.get("Circuit"));
+					System.out.println(arpMap.get("PingStatus"));
+
+				}
+			}
+			// -----------the test for the arpList
+			// --------------end------------------
+
+			// -----------the test for the interfaceList ---------begin------------------
+
+			System.out.println("----context num: " + iContextNum
+					+ " context name:" + contextName
+					+ "--the kinterfaceList size is:");
+			
+			if (interfaceList == null) {
+				System.out.println(" interfaceList  is null");
+			} else {
+
+			System.out.println(interfaceList.size());
+
+			for (int kinterfaceNum = 0; kinterfaceNum < interfaceList.size(); kinterfaceNum++) {
+
+				Map<String, String> interfaceMap = new HashMap<String, String>();
+
+				interfaceMap = interfaceList.get(kinterfaceNum);
+
+				if (interfaceMap == null) {
+
+					System.out.println("----context num: " + iContextNum
+							+ "--- context name:" + contextName
+							+ "--the interfaceList is null---");
+					continue;
+				} else {
+
+					System.out
+							.println("----context num: " + iContextNum
+									+ "--- context name:" + contextName
+									+ "--the kinterfaceNum is " + kinterfaceNum
+									+ "---");
+
+					System.out.println(interfaceMap.get("Name"));
+					System.out.println(interfaceMap.get("Address"));
+					System.out.println(interfaceMap.get("MTU"));
+					System.out.println(interfaceMap.get("State"));
+					System.out.println(interfaceMap.get("Bindings"));
+					}
+				}
+			}
+
+			// -----------the test for the interfaceList ---------end------------------
+
+		}
+		
+		System.out
+		.println("**********************结果集END*****************************");
+	}
 }
+
+/*
+ * System.out.println("**********************结果集BEGIN*****************************"
+ * ); System.out.println(resultList.size()); for (Map<String,Object>
+ * rsmap:resultList){ //取出结果集的中每个map，map的key分别为：contextname<string>,
+ * ip_status<list> String contextName = (String) rsmap.get("ContextName");
+ * List<String> ips = (List<String>) rsmap.get("ip_status");
+ * //如果这个context没有主机,只打印contextname if (ips == null){
+ * System.out.println("["+contextName+"]"+" null hosts"); continue; }
+ * //如果这个context有主机,打印contextname--IP-result for (String ipStr: ips){
+ * System.out.println("["+contextName+"] -- "+ipStr); } }
+ * 
+ * System.out.println("**********************结果集END*****************************"
+ * );
+ * 
+ * }
+ */
 

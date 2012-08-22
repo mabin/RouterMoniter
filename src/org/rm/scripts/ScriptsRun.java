@@ -54,7 +54,10 @@ public class ScriptsRun extends TimerTask{
 	
 	@Override
 	public void run() {
+		
+		System.out.println("*******the scriptRun timer excuted!************");
 		// TODO Auto-generated method stub
+		
 		List<MetaDevice> allDevice = getDevicesInfo();
 		RouterPing ping = null ;
 		PingBiz biz = null;

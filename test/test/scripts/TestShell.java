@@ -50,7 +50,7 @@ public class TestShell {
 		device.setPassword(password);
 		
 		PingBiz biz = new PingBiz();
-		biz.addPingResult(ping.getResult(),device);
+		//biz.addPingResult(ping.getResult(),device);
 		
 	}
 }
