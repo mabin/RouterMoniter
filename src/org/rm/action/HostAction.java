@@ -4,19 +4,23 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.rm.bean.DHost;
 import org.rm.bean.DInterface;
+import org.rm.bean.MetaContext;
 import org.rm.core.baseaction;
 import org.rm.core.dbquery;
 import org.rm.core.fun;
 import org.rm.core.log;
+import org.rm.core.result;
 import org.rm.dao.ContextDAO;
 import org.rm.dao.HostDAO;
 import org.rm.dao.InterfaceDAO;
+import org.rm.utils.DBGridQuery;
 
 public class HostAction extends baseaction{
 	public DHost queryHostById(int id) {
@@ -88,11 +92,69 @@ public class HostAction extends baseaction{
 		}
 	
 	}
+	
+	public void querybycontext(){
+		String contextid = (String)request.getParameter("contextid");
+		System.out.println("contextid id = "+contextid);
+		JSONObject json = null ;
+		DBGridQuery grid = null ;
+		try{
+			grid = new DBGridQuery();
+			json = grid.DBEXTGridResult("select * from d_host where contextid='"+contextid+"'", "d_host");
+			log.debug(this.getClass(),json.toString());
+			out.print(json);
+		}catch(Exception e){
+			out.print(result.JSONObjectFailure("context host fail"));
+			e.printStackTrace();
+		}finally{
+			try {
+				grid.GetCon().close();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public void insert(){
+		DHost host = null ;
+		dbquery db = null ;
+		
+		try{
+			host = new DHost();
+			db = new dbquery();
+			host.AddFilterFild("id");
+			host.setIpAddr(request.getParameter("ipaddr"));
+			host.setMacAddr(request.getParameter("macaddr"));
+			host.setTtl(request.getParameter("ttl"));
+			host.setType(request.getParameter("type"));
+			host.setCircuit(request.getParameter("circuit"));
+			host.setContextId(Integer.parseInt(request.getParameter("contextid")));
+			host.setStatus(request.getParameter("status"));
+			if (db.DBinsert(host)){
+				out.print(result.JSONObjectSuccess());
+				
+			}else{
+				out.print(result.JSONObjectFailure());
+			}
+			
+		}catch(Exception e){
+			host = null;
+			e.printStackTrace();
+		}finally{
+			host = null;
+			db = null ;
+		}
+	}
 
 	@Override
 	public void exe() {
 		// TODO Auto-generated method stub
 		if (request.getParameter("actioncmd").equals("queryall"))
 			queryInfoAll();
+		else if (request.getParameter("actioncmd").equals("querybycontext"))
+			querybycontext();
+		else if (request.getParameter("actioncmd").equals("insert"))
+			insert();
 	}
 }

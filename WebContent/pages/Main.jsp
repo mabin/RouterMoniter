@@ -13,6 +13,7 @@
  	<!-- ENDLIBS -->
 
     <script type="text/javascript" src="../ExtJS/ext-all-debug.js"></script>
+    <script type="text/javascript" src="js/uxcom.js"></script>
 	<!-- Datetime tools -->
 	<script type="text/javascript" src="js/datefield/DateTimeField.js"></script>
 	<script type="text/javascript" src="js/datefield/Spinner.js"></script>
@@ -34,6 +35,10 @@
         <dt id="router-grid-win-shortcut">
             <a href="#"><img src="images/router.png" />
             <div>路由管理</div></a>
+        </dt>
+        <dt id="context-grid-win-shortcut">
+            <a href="#"><img src="images/mail.png" />
+            <div>Context管理</div></a>
         </dt>
         <dt id="router-grid-win-shortcut">
             <a href="#"><img src="images/mail.png" />

@@ -11,8 +11,9 @@
 var servletPath="../servlet";
 var GridPageSize=20;
 var itemsheight=25; //表单行高
-msg = {"1":"服务器返回：数据提交成功！"};
-
+var msg = {"1":"服务器返回：数据提交成功！"};
+var contextid='';
+var routerid = '';
 MyDesktop = new Ext.app.App({
 	init :function(){
 		Ext.QuickTips.init();
@@ -20,7 +21,8 @@ MyDesktop = new Ext.app.App({
 
 	getModules : function(){
 		return [
-			new MyDesktop.RouterGridWindow()
+			new MyDesktop.RouterGridWindow(),
+			new MyDesktop.ContextGridWindow()
 		];
 	},
 
@@ -42,7 +44,7 @@ MyDesktop = new Ext.app.App({
     }
 });
 
-var routerid = '';
+
 /*
  * 路由器信息显示window
  */
@@ -144,6 +146,126 @@ MyDesktop.RouterGridWindow = Ext.extend(Ext.app.Module, {
     }
 });
 
+MyDesktop.ContextGridWindow = Ext.extend(Ext.app.Module, {
+    id:'context-grid-win',
+    init : function(){
+        this.launcher = {
+            text: 'Context Window',
+            iconCls:'icon-grid',
+            handler : this.createWindow,
+            scope: this
+        }
+    },
+
+    createWindow : function(){
+        var desktop = this.app.getDesktop();
+        var win = desktop.getWindow('context-grid-win');
+        if(!win){
+            win = desktop.createWindow({
+                id: 'context-grid-inwin',
+                title:'Context Window',
+                width:650,
+                height:480,
+                iconCls: 'icon-grid',
+                shim:false,
+                animCollapse:false,
+                constrainHeader:true,
+				loadMask:{msg:'正在加载数据,请稍候.....'},
+				closeable:true,
+                layout: 'fit',
+                items:	new Ext.grid.GridPanel({
+							//header:true, region:'center', split:true, loadMask:true,
+							//border : true,stripeRows : false, enableHdMenu:false,
+							store : ContextStore,
+							columns: [
+								{header:'序号',dataIndex:'id',width:30,hidden:false},
+								{header:'路由ID',dataIndex:'deviceid',sortable:true,width:77,hidden:true},
+								{header:'ContextName',dataIndex:'contextname',sortable:true,width:77},
+								{header:'ContextID',dataIndex:'contextid',sortable:true,width:77},
+								{header:'VPN-RD',dataIndex:'vpnrd',sortable:true,width:77},
+								{header:'Description',dataIndex:'description',sortable:true,width:77},
+								{header:'操作',width:100, xtype:'actioncolumn',
+									items:[{icon   : 'images/grid.png', tooltip: '查看主机',  
+			                                    handler: function(grid, rowIndex, colIndex) {
+			                                     var OBJ = ContextStore.getAt(rowIndex);
+			                            	       	contextid = OBJ.get('id');
+			                            	       	HostShowform(OBJ);
+			                            	     }},'','','','','','','','','','','','','','','',
+										{icon   : 'images/edit.png', tooltip: '修改',  
+			                                    handler: function(grid, rowIndex, colIndex) {
+			                                     var OBJ = ContextStore.getAt(rowIndex);
+			                                     if (routerid == ''){
+													Ext.MessageBox.alert('警告','请选择路由器后再执行添加操作');
+													return ;
+												}
+			                            	       	ContextEditform(OBJ,ContextStore);
+			                            	       
+			                            	     }},'','','','','','','','','','','','','','','',
+			                            	{icon:'images/delete.png', tooltip: '删除',  
+			                                    handler: function(grid, rowIndex, colIndex) {
+			                                     var OBJ = ContextStore.getAt(rowIndex);
+			                            	       if (confirm()==true){
+			                            	       	var OfferGrid_MyMask = new Ext.LoadMask(Ext.getBody(), { msg : "请等待..."});
+			                            	       		Ext.Ajax.request({url:servletPath , mthod:'POST',
+			                            	       			params:{
+			                            	       				actionname:'org.rm.action.RouterAction',
+								                                actioncmd:'deletebyid',
+								               		            fguid : OBJ.get('fguid')
+			                            	       			},
+			                            	       			callback:function(options,success,response){
+			                            	       				OfferGrid_MyMask.hide();
+			                            	       				if (success){
+			                            	       					var JSONOBJ = Ext.util.JSON.decode(response.responseText);
+			                            	       					if (JSONOBJ.success==true){
+			                            	       						//OfferStore.remove(OBJ);
+			                            	       					}else{
+			                            	       						//alert(Error.msg[JSONOBJ.msg]);
+			                            	       					}
+			                            	       				}else{
+			                            	       					// alert(Error.msg['10000']);
+			                            	       				}
+			                            	       			}
+			                            	       			});
+			                            	       }
+			                            	     }}
+			                            	]
+								}
+							],
+							tbar : [
+							'选择路由:',contextCombo
+							,{
+								text : '查询',
+								iconCls : 'icon-find',
+								handler : function() {
+									ContextStore.removeAll();
+									ContextStore.baseParams = {
+										actionname:'org.rm.action.ContextAction',
+ 										actioncmd:'querybyrouter',
+ 										routerid:routerid
+ 									};
+									ContextStore.load();
+								}
+							},{text : '添加Context',tooltip : '添加Context',iconCls : 'add',
+									handler : function() {
+										if (routerid == ''){
+											Ext.MessageBox.alert('警告','请选择路由器后再执行添加操作');
+											return ;
+										}
+								     ContextAddform(ContextStore);
+									}
+							}
+							]//,
+							//bbar: Offerbbar
+						})
+            });
+        }
+        win.show();
+        RouterStore.load();
+    }
+});
+
+
+
 //路由信息Store
 var RouterStore = new Ext.data.JsonStore({
  				url:"../servlet",baseParams:{actionname:'org.rm.action.RouterAction',actioncmd:'query'},
@@ -178,9 +300,27 @@ var RouterStore = new Ext.data.JsonStore({
  						{name:'onlinehosts', type:'string'}
  						]}
  						);
-//RouterStore.load();
-//路由信息Grid
-//var RouterGrid = 
+ 						
+//Context信息Store
+//路由信息Store
+var ContextStore = new Ext.data.JsonStore({
+ 				url:"../servlet",
+ 				baseParams:{
+ 				actionname:'org.rm.action.ContextAction',
+ 				actioncmd:'querybyrouter',
+ 				routerid:routerid
+ 				},
+
+ 				totalProperty:'result',root:'meta_context',
+ 				fields:[{name:'id', type:'string'},
+ 						{name:'deviceid', type:'string'},
+ 						{name:'contextname', type:'string'},
+ 						{name:'contextid', type:'string'},
+ 						{name:'vpnrd', type:'string'},
+ 						{name:'description', type:'string'}
+ 						]}
+);
+
 //路由器信息修改
 var RouterEditform = function(RecordOBJ,store){
 	     var RouterEditform_MyMask = new Ext.LoadMask(Ext.getBody(), { msg : "请等待..."});
@@ -255,7 +395,6 @@ var RouterEditform = function(RecordOBJ,store){
 					]});    
            RouterEdit_Window.show();
            };
-           
 //路由器信息修改
 var RouterAddform = function(RecordOBJ,store){
 	     var RouterAddform_MyMask = new Ext.LoadMask(Ext.getBody(), { msg : "请等待..."});
@@ -331,54 +470,147 @@ var RouterAddform = function(RecordOBJ,store){
            RouterAdd_Window.show();
            };
 
+//context下拉树
+var contextCombo = new Ext.form.ComboBox({
+                fieldLabel: 'Management Level',
+                name:'contextCombo',
+                forceSelection: true,
+                listWidth: 150,
+                store: RouterStore,
+                valueField:'id',
+                displayField:'deviceip',
+                typeAhead: true,
+                mode: 'local',
+                triggerAction: 'all',
+                selectOnFocus:true,
+                allowBlank:false,
+                 listeners:{
+         			select  :function(combo,record,index){
+              		routerid = combo.value;
+        		 }
+     }      
+});
 
+//Context信息修改
+var ContextEditform = function(RecordOBJ,store){
+	     var ContextEditform_MyMask = new Ext.LoadMask(Ext.getBody(), { msg : "请等待..."});
+	     var ContextEdit_Form=new Ext.form.FormPanel({
+				 	baseCls: 'x-plain',url:'',layout:'absolute',defaultType: 'textfield',
+                    items: [
+                            {x: 80,y: itemsheight*1,name: 'id', xtype:'textfield',value :RecordOBJ.get('id'), maxLength:10,minLength:1, allowBlank:true, anchor:'90%',hidden:true },
+                            {x: 0, y: itemsheight*1,xtype:'label', text: 'ContextName:' },
+                            {x: 80,y: itemsheight*1,name: 'contextname', xtype:'textfield',value :RecordOBJ.get('contextname'), allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*2,xtype:'label', text: 'ContextId:' },
+                            {x: 80,y: itemsheight*2,name: 'contextid', xtype:'textfield',value :RecordOBJ.get('contextid'), allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*3,xtype:'label', text: 'VPN-RD' },
+                            {x: 80,y: itemsheight*3,name: 'vpnrd', xtype:'textfield',value :RecordOBJ.get('vpnrd'), allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*4,xtype:'label', text: 'Description:' },
+                            {x: 80,y: itemsheight*4,name: 'description', xtype:'textfield',value :RecordOBJ.get('description'), allowBlank:true, anchor:'90%' }
+                    ]});
+                    
+          var ContextEdit_Window=new Ext.Window({ title: '修改Context信息',modal : true,plain: true,
+                    width : 350,height : 350,resizable : false,layout : 'fit',closeAction:'hide',
+					bodyStyle : 'padding:5px;',buttonAlign : 'center',items : ContextEdit_Form,
+					buttons : [{
+						text : '保存',
+						handler : function() {// 验证
+							if (ContextEdit_Form.getForm().isValid()) {
+							    Ext.Ajax.request({ 
+							    url : servletPath,  
+							    method : 'POST',
+                                params:{
+                                actionname:'org.rm.action.ContextAction',
+                                actioncmd:'updatebyid',
+               		            id : ContextEdit_Form.getForm().findField('id').getValue(),
+               		            contextname : ContextEdit_Form.getForm().findField('contextname').getValue(),
+               		            contextid : ContextEdit_Form.getForm().findField('contextid').getValue(),
+               		            vpnrd : ContextEdit_Form.getForm().findField('vpnrd').getValue(),
+               		            description : ContextEdit_Form.getForm().findField('description').getValue(),
+               		            deviceid:routerid
+                                },
+                                callback : function(options, success, response) {
+                	       				ContextEditform_MyMask.hide();
+                	       				if (success){
+                	       					var JSONOBJ = Ext.util.JSON.decode(response.responseText);
+                	       					if (JSONOBJ.success==true){
+                	       							ContextEdit_Window.hide();
+                	       							Ext.MessageBox.alert('提示','Context信息更新成功');
+                	       							ContextStore.reload();
+                	       					}else{
+                	       						Ext.MessageBox.alert('错误','Context信息更新失败');
+                	       					}
+                	       				}else{
+                	       					Ext.MessageBox.alert('错误','数据库操作超时');
+                	       				}
+                	       			}})}
+           				}},{ text: '取消',handler:function(){ ContextEdit_Window.hide(); } }
+					]});    
+           ContextEdit_Window.show();
+           };
+//路由器信息修改
+var ContextAddform = function(RecordOBJ,store){
+	     var ContextAddform_MyMask = new Ext.LoadMask(Ext.getBody(), { msg : "请等待..."});
+	     var ContextAdd_Form=new Ext.form.FormPanel({
+				 	baseCls: 'x-plain',url:'',layout:'absolute',defaultType: 'textfield',
+                    items: [
+                            {x: 0, y: itemsheight*1,xtype:'label', text: 'ContextName:' },
+                            {x: 80,y: itemsheight*1,name: 'contextname', xtype:'textfield', allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*2,xtype:'label', text: 'ContextId:' },
+                            {x: 80,y: itemsheight*2,name: 'contextid', xtype:'textfield', allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*3,xtype:'label', text: 'VPN-RD' },
+                            {x: 80,y: itemsheight*3,name: 'vpnrd', xtype:'textfield', allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*4,xtype:'label', text: 'Description:' },
+                            {x: 80,y: itemsheight*4,name: 'description', xtype:'textfield', allowBlank:true, anchor:'90%' }
+                    ]});
+                    
+          var ContextAdd_Window=new Ext.Window({ title: '添加Context信息',modal : true,plain: true,
+                    width : 350,height : 350,resizable : false,layout : 'fit',closeAction:'hide',
+					bodyStyle : 'padding:5px;',buttonAlign : 'center',items : ContextAdd_Form,
+					buttons : [{
+						text : '保存',
+						handler : function() {// 验证
+							if (ContextAdd_Form.getForm().isValid()) {
+							    Ext.Ajax.request({ 
+							    url : servletPath,  
+							    method : 'POST',
+                                params:{
+                                actionname:'org.rm.action.ContextAction',
+                                actioncmd:'insert',
+               		            contextname : ContextAdd_Form.getForm().findField('contextname').getValue(),
+               		            contextid : ContextAdd_Form.getForm().findField('contextid').getValue(),
+               		            vpnrd : ContextAdd_Form.getForm().findField('vpnrd').getValue(),
+               		            description : ContextAdd_Form.getForm().findField('description').getValue(),
+               		            deviceid:routerid
+                                },
+                                callback : function(options, success, response) {
+                	       				ContextAddform_MyMask.hide();
+                	       				if (success){
+                	       					var JSONOBJ = Ext.util.JSON.decode(response.responseText);
+                	       					if (JSONOBJ.success==true){
+                	       						ContextAdd_Window.hide();
+                	       						Ext.MessageBox.alert('提示','Context信息添加成功');
+                	       						ContextStore.reload();
+                	       					}else{
+                	       						Ext.MessageBox.alert('错误','Context信息添加失败');
+                	       					}
+                	       				}else{
+                	       					Ext.MessageBox.alert('错误','数据库操作超时');
+                	       				}
+                	       			}})}
+           				}},{ text: '取消',handler:function(){ ContextAdd_Window.hide(); } }
+					]});    
+           ContextAdd_Window.show();
+           };
 
-
-var InfoShowform = function(OBJ,HostStore){
-	
-	var HostStore = new Ext.data.JsonStore({
- 				url:"../servlet",
- 				baseParams:{
-	 				actionname:'org.rm.action.HostAction',
-	 				actioncmd:'queryall',
-	 				deviceid:OBJ.get('id')
- 				},
- 				listeners:{
- 					clear: function(){
- 						if ( bbar = RouterGrid.getBottomToolbar()){
- 							bbar.updateInfo();
-							bbar.next.setDisabled(true);
-							bbar.prev.setDisabled(true);
-							bbar.first.setDisabled(true);
-							bbar.last.setDisabled(true);
-							bbar.refresh.setDisabled(true);
- 						}
- 				}},
- 				totalProperty:'result',root:'d_host',
- 				fields:[{name:'contextid', type:'string'},
- 						{name:'deviceid', type:'string'},
- 						{name:'contextname', type:'string'},
- 						{name:'ctxid', type:'string'},
- 						{name:'hstid', type:'string'},
- 						{name:'vapnrd', type:'string'},
- 						{name:'description', type:'string'},
- 						{name:'ipaddr', type:'string'},
- 						{name:'macaddr', type:'string'},
- 						{name:'ttl', type:'string'},
- 						{name:'type', type:'string'},
- 						{name:'circuit', type:'string'},
- 						{name:'status', type:'string'}
- 						]}
-);
-	     var InfoShow_Grid=new Ext.grid.GridPanel({
+//查看Context下的主机
+var HostShowform = function(OBJ,HostStore){
+	     var HostShow_Grid=new Ext.grid.GridPanel({
 							//header:true, region:'center', split:true, loadMask:true,
 							//border : true,stripeRows : false, enableHdMenu:false,
 							store : HostStore,
 							columns: [
-								{header:'Host Id',dataIndex:'hstid',width:30,hidden:false},
-								{header:'Context Name',dataIndex:'contextname',sortable:true,width:77},
+								{header:'Host Id',dataIndex:'id',width:30,hidden:false},
 								{header:'Context Id',dataIndex:'contextid',sortable:true,width:77},
-								{header:'VPN RD',dataIndex:'vapnrd',sortable:true,width:77},
 								{header:'IP Address',dataIndex:'ipaddr',sortable:true,width:77},
 								{header:'Mac Address',dataIndex:'macaddr',sortable:true,width:77},
 								{header:'TTL',dataIndex:'ttl',sortable:true,width:77},
@@ -387,23 +619,97 @@ var InfoShowform = function(OBJ,HostStore){
 								{header:'Status',dataIndex:'status',sortable:true,width:77}
 							],
 							tbar : [{text : '添加主机',tooltip : '添加主机',iconCls : 'add',handler : function() {
-								    // RouterAddform(RouterStore);
+								    HostAddform(RouterStore);
 									 }} ]//,
 							//bbar: Offerbbar
 		});
 		
-		var InfoShow_Window=new Ext.Window({ title: '添加主机信息',modal : true,plain: true,
+		var HostShow_Window=new Ext.Window({ title: '添加主机信息',modal : true,plain: true,
                     width : 750,height : 350,resizable : false,layout : 'fit',closeAction:'hide',
-					bodyStyle : 'padding:5px;',buttonAlign : 'center',items : InfoShow_Grid
+					bodyStyle : 'padding:5px;',buttonAlign : 'center',items : HostShow_Grid
 		});
-		InfoShow_Window.show();
+		HostShow_Window.show();
 		HostStore.reload();
 };
 
-
-
-
-
+var HostStore = new Ext.data.JsonStore({
+ 				url:"../servlet",
+ 				baseParams:{
+	 				actionname:'org.rm.action.HostAction',
+	 				actioncmd:'querybycontext',
+	 				contextid:OBJ.get('id')
+ 				},
+ 				totalProperty:'result',root:'d_host',
+ 				fields:[{name:'id', type:'string'},
+ 						{name:'contextid', type:'string'},
+ 						{name:'ipaddr', type:'string'},
+ 						{name:'macaddr', type:'string'},
+ 						{name:'ttl', type:'string'},
+ 						{name:'type', type:'string'},
+ 						{name:'circuit', type:'string'},
+ 						{name:'status', type:'string'}
+ 						]}
+);
+//增加主机
+var HostAddform = function(OBJ,HostStore){
+	     var HostAddform_MyMask = new Ext.LoadMask(Ext.getBody(), { msg : "请等待..."});
+	     var HostAdd_Form=new Ext.form.FormPanel({
+				 	baseCls: 'x-plain',url:'',layout:'absolute',defaultType: 'textfield',
+                    items: [
+                            {x: 0, y: itemsheight*1,xtype:'label', text: 'IpAddr:' },
+                            {x: 80,y: itemsheight*1,name: 'ipaddr', xtype:'textfield', allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*2,xtype:'label', text: 'MacAddr:' },
+                            {x: 80,y: itemsheight*2,name: 'macaddr', xtype:'textfield', allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*3,xtype:'label', text: 'TTL' },
+                            {x: 80,y: itemsheight*3,name: 'ttl', xtype:'textfield', allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*4,xtype:'label', text: 'Type:' },
+                            {x: 80,y: itemsheight*4,name: 'type', xtype:'textfield', allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*5,xtype:'label', text: 'Circuit:' },
+                            {x: 80,y: itemsheight*5,name: 'circuit', xtype:'textfield', allowBlank:true, anchor:'90%' },
+                            {x: 0, y: itemsheight*6,xtype:'label', text: 'Status:' },
+                            {x: 80,y: itemsheight*6,name: 'status', xtype:'textfield', allowBlank:true, anchor:'90%' }
+                    ]});
+                    
+          var HostAdd_Window=new Ext.Window({ title: '添加Host信息',modal : true,plain: true,
+                    width : 350,height : 350,resizable : false,layout : 'fit',closeAction:'hide',
+					bodyStyle : 'padding:5px;',buttonAlign : 'center',items : HostAdd_Form,
+					buttons : [{
+						text : '保存',
+						handler : function() {// 验证
+							if (HostAdd_Form.getForm().isValid()) {
+							    Ext.Ajax.request({ 
+							    url : servletPath,  
+							    method : 'POST',
+                                params:{
+                                actionname:'org.rm.action.HostAction',
+                                actioncmd:'insert',
+               		            ipaddr : HostAdd_Form.getForm().findField('ipaddr').getValue(),
+               		            macaddr : HostAdd_Form.getForm().findField('macaddr').getValue(),
+               		            ttl : HostAdd_Form.getForm().findField('ttl').getValue(),
+               		            type : HostAdd_Form.getForm().findField('type').getValue(),
+               		            circuit : HostAdd_Form.getForm().findField('circuit').getValue(),
+               		            status : HostAdd_Form.getForm().findField('status').getValue(),
+               		            contextid:contextid
+                                },
+                                callback : function(options, success, response) {
+                	       				HostAddform_MyMask.hide();
+                	       				if (success){
+                	       					var JSONOBJ = Ext.util.JSON.decode(response.responseText);
+                	       					if (JSONOBJ.success==true){
+                	       						HostAdd_Window.hide();
+                	       						Ext.MessageBox.alert('提示','Host信息添加成功');
+                	       						HostStore.reload();
+                	       					}else{
+                	       						Ext.MessageBox.alert('错误','Host信息添加失败');
+                	       					}
+                	       				}else{
+                	       					Ext.MessageBox.alert('错误','数据库操作超时');
+                	       				}
+                	       			}})}
+           				}},{ text: '取消',handler:function(){ HostAdd_Window.hide(); } }
+					]});    
+           HostAdd_Window.show();
+}
 
 
 
