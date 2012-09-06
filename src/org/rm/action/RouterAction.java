@@ -1,19 +1,20 @@
 package org.rm.action;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
+import java.util.Iterator;
 import java.util.List;
-
+import java.util.Map;
 import org.json.JSONObject;
+import org.rm.bean.DHost;
+import org.rm.bean.DInterface;
+import org.rm.bean.MetaContext;
 import org.rm.bean.MetaDevice;
-import org.rm.biz.RouterBiz;
 import org.rm.core.baseaction;
 import org.rm.core.dbquery;
 import org.rm.core.fun;
 import org.rm.core.log;
 import org.rm.core.result;
+import org.rm.dao.RouterDAO;
+import org.rm.scripts.InitInfos;
 import org.rm.utils.DBGridQuery;
 
 public class RouterAction extends baseaction{
@@ -123,6 +124,89 @@ public class RouterAction extends baseaction{
 		
 	}
 	
+	public void initRouter(){
+		RouterDAO routerdao = new RouterDAO();
+		String routerid = request.getParameter("routerid");
+		MetaDevice dev = routerdao.getRouterById(Integer.parseInt(routerid));
+		InitInfos init = new InitInfos(dev);
+		init.run();
+		String hostname = init.getHostname();
+		List<Map<String,String>> contextList = init.getContextList();
+		List<Map<String,Object>> hiMapList = init.getHiMapList();
+		
+		try{
+			//遍历context
+			for (Map<String,String> ctxMap:contextList){
+				//得到一个context对象
+				MetaContext tmpContext = new MetaContext();
+				tmpContext.setDeviceId(Integer.parseInt(routerid));
+				tmpContext.setContextName(fun.nil((String)ctxMap.get("Context Name")," "));
+				tmpContext.setContextId(fun.nil((String)ctxMap.get("Context ID")," "));
+				tmpContext.setVpnRD(fun.nil((String)ctxMap.get("VPN-RD")," "));
+				tmpContext.setDescription(fun.nil((String)ctxMap.get("Description")," "));
+				
+				int ctxID = routerdao.updateContext(tmpContext);
+				log.debug(this.getClass(),"insert Context "+tmpContext.getContextName()+" "+ctxID);
+				
+				//通过context对象得到其对应的interface和host
+				Map<String,Object> hiMap = getContexttoHost(tmpContext.getContextName(), hiMapList);
+				
+				//2)更新主机信息，通过himap获取到主机list和接口list
+				List<Map<String,String>> ahosts = (List<Map<String,String>>)hiMap.get("Host_List");
+				if (ahosts != null){
+					for (Map<String,String> hostMap: ahosts){
+						DHost tmpHost = new DHost();
+						tmpHost.setContextId(ctxID);
+						tmpHost.setIpAddr(fun.nil(hostMap.get("Host"), " "));
+						tmpHost.setMacAddr(fun.nil(hostMap.get("Hardware address"), " "));
+						tmpHost.setTtl(fun.nil(hostMap.get("Ttl"), " "));
+						tmpHost.setType(fun.nil(hostMap.get("Type"), " "));
+						tmpHost.setCircuit(fun.nil(hostMap.get("Circuit"), " "));
+						tmpHost.setStatus(fun.nil(hostMap.get("PingStatus"), " "));
+						int hostid = routerdao.updateHost(tmpHost);
+						log.debug(this.getClass(),"insert host "+tmpHost.getIpAddr()+" "+hostid);
+					}
+				}
+				//接口集合
+				@SuppressWarnings("unchecked")
+				List<Map<String,String>> ainterfaces = (List<Map<String,String>>)hiMap.get("Interface_List");
+				if (ainterfaces != null){
+					for (Map<String,String> interfaceMap: ainterfaces){
+						DInterface tmpInterface = new DInterface();
+						tmpInterface.setContextId(ctxID);
+						tmpInterface.setName(fun.nil(interfaceMap.get("Name")," "));
+						tmpInterface.setAddress(fun.nil(interfaceMap.get("Address")," "));
+						tmpInterface.setMtu(fun.parseInt(interfaceMap.get("MTU"),0));
+						tmpInterface.setState(fun.nil(interfaceMap.get("State")," "));
+						tmpInterface.setBindings(fun.nil(interfaceMap.get("Bindings")," "));
+						int interfaceid = routerdao.updateInterface(tmpInterface);
+						log.debug(this.getClass(),"insert interface "+tmpInterface.getName()+" "+interfaceid);
+					}
+				}
+			}
+			out.print(result.JSONObjectSuccess());
+		}catch(Exception e){
+			out.print(result.JSONObjectFailure("路由器信息初始化失败"));
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 
+	 * @param contextName 
+	 * @param hiMapList
+	 * @return 返回的是contextName对应的hostList和interfaceList
+	 */
+	public Map<String,Object> getContexttoHost(String contextName, List<Map<String,Object>> hiMapList){
+		Iterator<Map<String, Object>> hiIter = hiMapList.iterator();
+		//遍历HostInterface映射List
+		while (hiIter.hasNext()){
+			Map<String,Object> tmpMap = hiIter.next();
+			if (tmpMap.get("Context Name").equals(contextName))
+				return tmpMap ;
+		}
+		return null ;
+	}
 	
 	@Override
 	public void exe() {
@@ -133,7 +217,8 @@ public class RouterAction extends baseaction{
 			GetAllRouter();
 		}else if (request.getParameter("actioncmd").equals("updatebyid")){
 			UpdateById();
-		}
+		}else if (request.getParameter("actioncmd").equals("init"))
+			initRouter();
 	}
 
 }

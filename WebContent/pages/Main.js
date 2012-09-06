@@ -22,7 +22,8 @@ MyDesktop = new Ext.app.App({
 	getModules : function(){
 		return [
 			new MyDesktop.RouterGridWindow(),
-			new MyDesktop.ContextGridWindow()
+			new MyDesktop.ContextGridWindow(),
+			new MyDesktop.PeopleGridWindow()
 		];
 	},
 
@@ -92,12 +93,37 @@ MyDesktop.RouterGridWindow = Ext.extend(Ext.app.Module, {
 								{header:'设备位置',dataIndex:'location',sortable:true,width:77},
 								{header:'设备归属',dataIndex:'devicedep',sortable:true,width:77},
 								{header:'操作',width:80, xtype:'actioncolumn',
-									items:[{icon   : 'images/grid.png', tooltip: '查看信息',  
+									items:[{icon   : 'images/grid.png', tooltip: '初始化',  
 			                                    handler: function(grid, rowIndex, colIndex) {
 			                                     var OBJ = RouterStore.getAt(rowIndex);
+			                                     var init_MyMask = new Ext.LoadMask(Ext.getBody(), { msg : "正在初始化路由器信息，请等待..."});
 			                            	       	routerid = OBJ.get('id');
-			                            	       	InfoShowform(OBJ);
-			                            	     }},'','','','','','','','','','','','','','','',
+			                            	       	init_MyMask.show();
+															Ext.Ajax.request({ 
+															    url : servletPath,  
+															    method : 'POST',
+								                                params:{
+								                                actionname:'org.rm.action.RouterAction',
+								                                actioncmd:'init',
+								               		            routerid:routerid
+								                                },
+								                                callback : function(options, success, response) {
+								                	       				init_MyMask.hide();
+								                	       				if (success){
+								                	       					var JSONOBJ = Ext.util.JSON.decode(response.responseText);
+								                	       					if (JSONOBJ.success==true){
+								                	       						RouterAdd_Window.hide();
+								                	       						Ext.MessageBox.alert('提示','路由器信息初始化成功');
+								                	       						RouterStore.reload();
+								                	       					}else{
+								                	       						Ext.MessageBox.alert('错误','路由器信息初始化失败');
+								                	       					}
+								                	       				}else{
+								                	       					Ext.MessageBox.alert('错误','数据库操作超时');
+								                	       				}
+								                	       			}})
+														}
+			                            	     },'','','','','','','','','','','','','','','',
 										{icon   : 'images/edit.png', tooltip: '修改',  
 			                                    handler: function(grid, rowIndex, colIndex) {
 			                                     var OBJ = RouterStore.getAt(rowIndex);
@@ -264,6 +290,104 @@ MyDesktop.ContextGridWindow = Ext.extend(Ext.app.Module, {
     }
 });
 
+//人员管理
+
+MyDesktop.PeopleGridWindow = Ext.extend(Ext.app.Module, {
+    id:'people-grid-win',
+    init : function(){
+        this.launcher = {
+            text: 'People Window',
+            iconCls:'icon-grid',
+            handler : this.createWindow,
+            scope: this
+        }
+    },
+
+    createWindow : function(){
+        var desktop = this.app.getDesktop();
+        var win = desktop.getWindow('people-grid-win');
+        if(!win){
+            win = desktop.createWindow({
+                id: 'people-grid-inwin',
+                title:'People Window',
+                width:650,
+                height:480,
+                iconCls: 'icon-grid',
+                shim:false,
+                animCollapse:false,
+                constrainHeader:true,
+				loadMask:{msg:'正在加载数据,请稍候.....'},
+				closeable:true,
+                layout: 'fit',
+                items:	new Ext.grid.GridPanel({
+							store : PeopleStore,
+							columns: [
+								{header:'序号',dataIndex:'id',width:30,hidden:false},
+								{header:'姓名',dataIndex:'name',sortable:true,width:77},
+								{header:'手机号码',dataIndex:'mobile',sortable:true,width:77},
+								{header:'邮箱地址',dataIndex:'email',sortable:true,width:77},
+								{header:'设备Id',dataIndex:'device',sortable:true,width:77},
+								{header:'操作',width:100, xtype:'actioncolumn',
+									items:[{icon   : 'images/grid.png', tooltip: '查看主机',  
+			                                    handler: function(grid, rowIndex, colIndex) {
+			                                     var OBJ = PeopleStore.getAt(rowIndex);
+			                            	       	contextid = OBJ.get('id');
+			                            	       	HostShowform(OBJ);
+			                            	     }},'','','','','','','','','','','','','','','',
+										{icon   : 'images/edit.png', tooltip: '修改',  
+			                                    handler: function(grid, rowIndex, colIndex) {
+			                                     var OBJ = PeopleStore.getAt(rowIndex);
+			                                     if (routerid == ''){
+													Ext.MessageBox.alert('警告','请选择路由器后再执行添加操作');
+													return ;
+												}
+			                            	       	ContextEditform(OBJ,ContextStore);
+			                            	       
+			                            	     }},'','','','','','','','','','','','','','','',
+			                            	{icon:'images/delete.png', tooltip: '删除',  
+			                                    handler: function(grid, rowIndex, colIndex) {
+			                                     var OBJ = PeopleStore.getAt(rowIndex);
+			                            	       if (confirm()==true){
+			                            	       	var OfferGrid_MyMask = new Ext.LoadMask(Ext.getBody(), { msg : "请等待..."});
+			                            	       		Ext.Ajax.request({url:servletPath , mthod:'POST',
+			                            	       			params:{
+			                            	       				actionname:'org.rm.action.RouterAction',
+								                                actioncmd:'deletebyid',
+								               		            fguid : OBJ.get('fguid')
+			                            	       			},
+			                            	       			callback:function(options,success,response){
+			                            	       				OfferGrid_MyMask.hide();
+			                            	       				if (success){
+			                            	       					var JSONOBJ = Ext.util.JSON.decode(response.responseText);
+			                            	       					if (JSONOBJ.success==true){
+			                            	       						//OfferStore.remove(OBJ);
+			                            	       					}else{
+			                            	       						//alert(Error.msg[JSONOBJ.msg]);
+			                            	       					}
+			                            	       				}else{
+			                            	       					// alert(Error.msg['10000']);
+			                            	       				}
+			                            	       			}
+			                            	       			});
+			                            	       }
+			                            	     }}
+			                            	]
+								}
+							],
+							tbar : [{text : '添加管理人员',tooltip : '添加管理人员',iconCls : 'add',
+									handler : function() {
+								     ContextAddform(PeopleStore);
+									}
+							}
+							]//,
+							//bbar: Offerbbar
+						})
+            });
+        }
+        win.show();
+        PeopleStore.load();
+    }
+});
 
 
 //路由信息Store
@@ -395,7 +519,7 @@ var RouterEditform = function(RecordOBJ,store){
 					]});    
            RouterEdit_Window.show();
            };
-//路由器信息修改
+//路由器信息增加
 var RouterAddform = function(RecordOBJ,store){
 	     var RouterAddform_MyMask = new Ext.LoadMask(Ext.getBody(), { msg : "请等待..."});
 	     var RouterAdd_Form=new Ext.form.FormPanel({
@@ -637,7 +761,7 @@ var HostStore = new Ext.data.JsonStore({
  				baseParams:{
 	 				actionname:'org.rm.action.HostAction',
 	 				actioncmd:'querybycontext',
-	 				contextid:OBJ.get('id')
+	 				contextid:contextid
  				},
  				totalProperty:'result',root:'d_host',
  				fields:[{name:'id', type:'string'},
@@ -711,5 +835,18 @@ var HostAddform = function(OBJ,HostStore){
            HostAdd_Window.show();
 }
 
-
+//人员管理
+var PeopleStore = new Ext.data.JsonStore({
+ 				url:"../servlet",
+ 				baseParams:{
+	 				actionname:'org.rm.action.PeopleAction',
+	 				actioncmd:'query'
+ 				},
+ 				totalProperty:'result',root:'meta_people',
+ 				fields:[{name:'id', type:'string'},
+ 						{name:'name', type:'string'},
+ 						{name:'mobile', type:'string'},
+ 						{name:'email', type:'string'},
+ 						{name:'device', type:'string'}]
+});
 

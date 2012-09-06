@@ -25,6 +25,14 @@ public class RouterInit implements Analysis, Runnable {
 
 	public List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
 
+	/**
+	 * 路由初始化流程：
+	 * 1、得到路由器shell，得到主机名。
+	 * 2、使用show context all ， 得到该路由器上的所有context信息
+	 * 3、在每一个context中，使用show arp命令得到该context下的所有主机
+	 * 4、返回resultList
+	 */
+	
 	public void RouterInit() {
 
 		this.HostNameInit();

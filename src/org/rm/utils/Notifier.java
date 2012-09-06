@@ -1,15 +1,21 @@
 package org.rm.utils;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
+import org.rm.bean.MetaPeople;
 import org.rm.core.dbquery;
 import org.rm.core.fun;
 
@@ -24,17 +30,43 @@ public class Notifier {
 	String content = "";
 	
 	
-	public Notifier(String serverIp, int serverPort, String message,
-			List<String> emails, List<String> phones, String title,
-			String content) {
+	public Notifier( MetaPeople people, String title,String content) {
 		super();
-		ServerIp = serverIp;
-		ServerPort = serverPort;
-		this.message = message;
-		this.emails = emails;
-		this.phones = phones;
 		this.title = title;
 		this.content = content;
+		initPeopleInfo(people);
+		initServerInfo();
+	}
+	
+	public void initPeopleInfo(MetaPeople people){
+		dbquery db = new dbquery();
+		Connection conn = db.GetCon();
+		String querySQL="select * from meta_people where name='"+people.getName()+"'";
+		try {
+			PreparedStatement pstmt = conn.prepareStatement(querySQL);
+			ResultSet rs = pstmt.executeQuery();
+			while(rs.next()){
+				emails.add(rs.getString("Email"));
+				phones.add(rs.getString("Mobile"));
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void initServerInfo(){
+    	Properties props=new Properties();
+        FileInputStream input;
+		try {
+			input = new FileInputStream(System.getProperty("DBproperties")+"WEB-INF/c3p0.properties");
+			props.load(input);
+			this.ServerIp = props.getProperty("ServerIp");
+			this.ServerPort = Integer.parseInt(props.getProperty("ServerPort"));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}   
 	}
 
 	public void sendNotifier(){

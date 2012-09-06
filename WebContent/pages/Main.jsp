@@ -26,6 +26,7 @@
     <script type="text/javascript" src="js/App.js"></script>
     <script type="text/javascript" src="js/Module.js"></script>
     <script type="text/javascript" src="Main.js"></script>
+    
 </head>
 <body scroll="no">
 
@@ -40,16 +41,8 @@
             <a href="#"><img src="images/mail.png" />
             <div>Context管理</div></a>
         </dt>
-        <dt id="router-grid-win-shortcut">
+        <dt id="people-grid-win-shortcut">
             <a href="#"><img src="images/mail.png" />
-            <div>邮件管理</div></a>
-        </dt>
-        <dt id="router-grid-win-shortcut">
-            <a href="#"><img src="images/phone.png" />
-            <div>短信管理</div></a>
-        </dt>
-        <dt id="router-grid-win-shortcut">
-            <a href="#"><img src="images/s.gif" />
             <div>人员管理</div></a>
         </dt>
     </dl>

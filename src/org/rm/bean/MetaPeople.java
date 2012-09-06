@@ -18,6 +18,11 @@ public class MetaPeople extends basebean implements java.io.Serializable {
 
 	// Constructors
 
+	public MetaPeople(String name){
+		this.name = name;
+	}
+	
+	
 	/** default constructor */
 	public MetaPeople() {
 	}

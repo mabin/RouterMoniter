@@ -12,6 +12,7 @@ import org.rm.bean.DInterface;
 import org.rm.bean.MetaContext;
 import org.rm.bean.MetaDevice;
 import org.rm.core.dbquery;
+import org.rm.core.fun;
 import org.rm.core.log;
 
 public class RouterDAO {
@@ -214,6 +215,43 @@ public class RouterDAO {
 			db = null ;
 		}
 		return id ;
+	}
+	
+	public MetaDevice getRouterById(int routerid){
+		MetaDevice dev = new MetaDevice();
+		dbquery db = null ;
+		Connection conn = null ;
+		PreparedStatement pstmt = null ;
+		ResultSet rs = null ;
+		try{
+			db = new dbquery();
+			conn = db.GetCon();
+			String sql = "select * from meta_device where id='"+routerid+"'";
+			pstmt = conn.prepareStatement(sql);
+			rs = pstmt.executeQuery();
+			if (rs.next()){
+				dev.setId(rs.getInt("id"));
+				dev.setDeviceName(rs.getString("devicename"));
+				dev.setDeviceType(rs.getInt("devicetype"));
+				dev.setHostname(rs.getString("hostname"));
+				dev.setDeviceIp(rs.getString("deviceip"));
+				dev.setLoginWay(rs.getString("loginway"));
+				dev.setLoginName(rs.getString("loginname"));
+				dev.setPassword(rs.getString("password"));
+				dev.setStatus(rs.getInt("status"));
+				dev.setLastOnline(fun.GetFormatDate(rs.getDate("LastOnline")));
+				dev.setDevicePath(rs.getString("devicepath"));
+				dev.setDeviceParent(String.valueOf(rs.getInt("deviceparent")));
+				dev.setDeviceInfo(rs.getString("deviceinfo"));
+				dev.setDevicePurpose(rs.getString("devicepurpose"));
+				dev.setLocation(rs.getString("location"));
+				dev.setDeviceDep(rs.getString("devicedep"));
+				dev.setOnlineHosts(rs.getString("onlinehost"));
+			}
+		}catch (Exception e){
+			e.printStackTrace();
+		}
+		return dev;
 	}
 
 }
